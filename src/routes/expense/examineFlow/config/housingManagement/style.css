@@ -1,0 +1,15 @@
+/* 房屋审批流配置样式 */
+.app-comp-expense-housing-management-component {
+  height: 100%;
+}
+
+/* 房屋审批流配置按钮外部样式 */
+.app-comp-expense-housing-management-component-button {
+  text-align: center;
+  margin-top: 100px;
+}
+
+/* 房屋审批流配置提交样式 */
+.app-comp-expense-housing-management-component-submit {
+  margin-right: 30px;
+}

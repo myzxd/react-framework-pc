@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: models/finance/plan.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: models/finance/plan.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * 薪资设置 - 薪资方案 model
+ *
+ * @module model/finance/plan
+ */
+/* eslint no-underscore-dangle: ["error", { "allow": ["_meta", "_id"] }]*/
+import is from 'is_js';
+import { message } from 'antd';
+
+import {
+  fetchTrialResultsList,
+  fetchSalaryTaskDetails,
+  fetchSalaryPlanList,
+  fetchSalaryPlanTask,
+  createSalaryPlan,
+  fetchSalaryPlanDetailData,
+  fetchPlanVersionDetailData,
+  fetchRuleCollectionData,
+  createRuleCollection,
+  updateMutualExclusion,
+  deletePlanVersion,
+  cancelToDraft,
+  forkSalaryPlan,
+  fetchSalaryPlanVersion,
+  fetchTrialSummaryList,
+  downloadSalaryPlanList,
+} from '../../services/finance';
+
+import { ExpenseCostCenterType } from '../../application/define';
+import { RequestMeta, ResponseMeta } from '../../application/object';
+import {
+  SalaryPlanDetail,
+  SalaryPlanListItem,
+  SalaryComputeDataSetListItem,
+  SalaryPlanVersionDetail,
+  SalaryPlanRuleCollection,
+  SalaryComputeTaskDetail,
+  SalaryComputeTaskListItem,
+} from '../../application/object/salary/test';
+
+export default {
+  /**
+   * 命名空间
+   * @default
+   */
+  namespace: 'financePlan',
+
+  /**
+   * 状态树
+   * @prop {object} planListData 薪资方案列表
+   * @prop {object} calculateResultsData 获取试算薪资结果列表
+   * @prop {object} calculateHistoryData 获取试算薪资历史列表
+   * @prop {object} courierData 获取骑士维度明细数据列表
+   * @prop {object} districtsData 获取商圈维度明细数据列表
+   * @prop {object} calculateSummaryData 获取试算汇总数据列表
+   * @prop {object} salaryPlanDetailData 薪资方案详情
+   * @prop {object} planVersionDetailData 薪资方案版本详情
+   * @prop {object} ruleCollectionData 薪资方案规则集详情
+   * @prop {object} addressInfo 获取试算地址信息
+   */
+  state: {
+    planListData: {},           // 薪资方案列表
+    calculateResultsData: {},   // 获取试算薪资结果列表
+    calculateHistoryData: {},  // 获取试算薪资历史列表
+    courierData: {},            // 获取骑士维度明细数据列表
+    districtsData: {},          // 获取商圈维度明细数据列表
+    calculateSummaryData: {},   // 获取试算汇总数据列表
+    salaryPlanDetailData: {},   // 薪资方案详情
+    planVersionDetailData: {},  // 薪资方案版本详情
+    ruleCollectionData: {},     // 薪资方案规则集详情
+    addressInfo: {},            // 获取试算地址信息
+  },
+
+  /**
+   * @namespace finance/plan/effects
+   */
+  effects: {
+
+    /**
+     * 薪资方案汇总列表
+     * @param {object} meta 分页信息
+     * @param {array} platforms 平台
+     * @param {array} suppliers 供应商
+     * @param {array} cities 城市
+     * @param {array} districts 商圈
+     * @param {number} state 执行状态
+     * @memberof module:model/finance/plan~finance/plan/effects
+     */
+    * fetchSalaryPlanList({ payload = {} }, { call, put }) {
+      const payloads = payload;
+      // 请求列表的meta信息
+      const params = {
+        _meta: RequestMeta.mapper(payload),
+      };
+       // 获取平台
+      if (is.not.empty(payload.platforms) &amp;&amp; is.existy(payload.platforms)) {
+        params.platform_code = payload.platforms;
+      }
+      // 获取商圈
+      if (is.not.empty(payload.districts) &amp;&amp; is.existy(payloads.districts)) {
+        params.biz_district_id = payload.districts;
+      }
+      // 获取执行状态
+      if (is.not.empty(payload.state) &amp;&amp; is.existy(payload.state)) {
+        params.domain = Number(payload.state);
+      }
+       // 获取供应商
+      if (is.not.empty(payload.suppliers) &amp;&amp; is.existy(payloads.suppliers)) {
+        params.supplier_id = payload.suppliers;
+      }
+      // 获取城市
+      if (is.not.empty(payload.cities) &amp;&amp; is.existy(payload.cities)) {
+        params.city_code = payload.cities;
+      }
+      const result = yield call(fetchSalaryPlanList, params);
+      if (result === undefined) {
+        message.error('获取数据失败');
+        return;
+      }
+      yield put({ type: 'reduceSalaryPlanListData', payload: result });
+    },
+
+    /**
+     * 创建薪资方案类型
+     * @param {array} platforms 平台
+     * @param {array} suppliers 供应商
+     * @param {array} cities 城市
+     * @param {array} districts 商圈
+     * @param {string} fromDate 起始生效时间
+     * @param {string} toDate 结束生效时间
+     * @param {string} range 选择模板
+     * @param {string} scope 适用范围
+     * @param {string} name 名称
+     * @param {function} onSuccessCallback 成功回调
+     * @param {function} onFailureCallback 失败回调
+     * @memberof module:model/finance/plan~finance/plan/effects
+     */
+    * createSalaryPlanType({ payload = {} }, { put }) {
+      const {
+        name,
+        platforms,        // 平台
+        suppliers,        // 供应商
+        cities,           // 城市
+        districts,        // 商圈
+        fromDate,         // 起始生效时间
+        toDate,           // 结束生效时间
+        range,            // 选择模板
+        scope,            // 适用范围
+      } = payload.params;
+      // 请求列表的meta信息
+      const params = {};
+      // 获取供平台
+      if (is.not.empty(platforms) &amp;&amp; is.existy(platforms)) {
+        params.platform_code = platforms;
+      }
+      // 获取供应商
+      if (is.not.empty(suppliers) &amp;&amp; is.existy(suppliers)) {
+        params.supplier_id = suppliers;
+      }
+      // 获取适用范围
+      if (is.not.empty(scope) &amp;&amp; is.existy(scope)) {
+        params.domain = scope;
+      }
+      // 获取城市
+      if (is.not.empty(payload.cities) &amp;&amp; is.existy(cities)) {
+        params.city_code = cities;
+      }
+      // 获取商圈
+      if (is.not.empty(districts) &amp;&amp; is.existy(districts)) {
+        params.biz_district_id = districts;
+      }
+      // 获取起始创建时间
+      if (is.not.empty(fromDate) &amp;&amp; is.existy(fromDate)) {
+        params.from_date = fromDate;
+      }
+      // 获取结束创建时间
+      if (is.not.empty(toDate) &amp;&amp; is.existy(toDate)) {
+        params.to_date = toDate;
+      }
+      // 获取模板
+      if (is.not.empty(range) &amp;&amp; is.existy(range)) {
+        params.template = range;
+      }
+      if (is.not.empty(name) &amp;&amp; is.existy(name)) {
+        params.name = name;
+      }
+      const request = {
+        params, // 接口参数
+        service: createSalaryPlan, // 接口
+        onSuccessCallback: payload.onSuccessCallback, // 成功回调
+        onFailureCallback: payload.onFailureCallback, // 失败回调
+      };
+      yield put({
+        type: 'applicationCore/requestWithCallback',
+        payload: request,
+      });
+    },
+
+    /**
+     * 薪资试算任务创建
+     * @param {string} versionId 薪资版本ID
+     * @param {string} fromDate 起始生效时间
+     * @param {string} toDate 结束生效时间
+     * @param {function} onSuccessCallback 成功回调
+     * @param {function} onFailureCallback 失败回调
+     * @memberof module:model/finance/plan~finance/plan/effects
+     */
+    * createSalaryPlanTask({ payload = {} }, { put }) {
+      const {
+        versionId, // 薪资版本ID
+        fromDate, // 起始时间
+        toDate,   // 结束时间
+      } = payload.params;
+      const params = {};
+      // 获取起始试算时间
+      if (is.not.empty(fromDate) &amp;&amp; is.existy(fromDate)) {
+        params.from_date = fromDate;
+      }
+      if (is.not.empty(toDate) &amp;&amp; is.existy(toDate)) {
+        params.to_date = toDate;
+      }
+      if (is.not.empty(versionId) &amp;&amp; is.existy(versionId)) {
+        params.plan_version_id = versionId;
+      }
+      const request = {
+        params, // 接口参数
+        service: fetchSalaryPlanTask, // 接口
+        onSuccessCallback: payload.onSuccessCallback, // 成功回调
+        onFailureCallback: payload.onFailureCallback, // 失败回调
+      };
+      yield put({
+        type: 'applicationCore/requestWithCallback',
+        payload: request,
+      });
+    },
+
+    /**
+     * 创建审核批单
+     * @param {string} planVersionId 版本ID
+     * @param {function} onSuccessCallback 成功回调
+     * @param {function} onFailureCallback 失败回调
+     * @memberof module:model/finance/plan~finance/plan/effects
+     */
+    // TODO: @韩健 命名有问题
+    * createSalaryPlanVersion({ payload = {} }, { put }) {
+      const {
+        planVersionId,  // 版本id
+      } = payload.params;
+      const params = {};
+      if (is.not.empty(planVersionId) &amp;&amp; is.existy(planVersionId)) {
+        params.plan_version_id = planVersionId;
+      }
+      const request = {
+        params, // 接口参数
+        service: fetchSalaryPlanVersion, // 接口
+        onSuccessCallback: payload.onSuccessCallback, // 成功回调
+        onFailureCallback: payload.onFailureCallback, // 失败回调
+      };
+
+      yield put({
+        type: 'applicationCore/requestWithCallback',
+        payload: request,
+      });
+    },
+
+    /**
+     * 获取试算薪资结果列表
+     * @param {string} planVersionId 版本ID
+     * @param {number} type 类型
+     * @memberof module:model/finance/plan~finance/plan/effects
+     */
+    * fetchSalaryPlanResultsData({ payload = {} }, { put, call }) {
+      const { planVersionId, type } = payload;
+      const params = {};
+      // 获取版本id
+      if (is.not.empty(planVersionId) &amp;&amp; is.existy(planVersionId)) {
+        params.plan_version_id = planVersionId;
+      }
+      if (is.not.empty(type) &amp;&amp; is.existy(type)) {
+        params.type = type;
+      }
+      const result = yield call(fetchTrialResultsList, params);
+      if (result === undefined) {
+        message.error('获取数据失败');
+        return;
+      }
+      yield put({ type: 'reduceSalaryPlanResultsData', payload: result });
+    },
+
+    /**
+     * 获取试算薪资历史列表
+     * @param {string} planVersionId 版本ID
+     * @memberof module:model/finance/plan~finance/plan/effects
+     */
+    * fetchSalaryPlanHistoryData({ payload = {} }, { put, call }) {
+      const { planVersionId } = payload;
+      const params = {
+        _meta: RequestMeta.mapper(payload),
+      };
+      // 获取版本id
+      if (is.not.empty(planVersionId) &amp;&amp; is.existy(planVersionId)) {
+        params.plan_version_id = planVersionId;
+      }
+      const result = yield call(fetchTrialResultsList, params);
+      if (result === undefined) {
+        message.error('获取数据失败');
+        return;
+      }
+      yield put({ type: 'reduceSalaryPlanHistoryData', payload: result });
+    },
+
+    /**
+     * 获取骑士维度明细数据列表
+     * @param {string} taskId 版本ID
+     * @param {number} type 类型
+     * @memberof module:model/finance/plan~finance/plan/effects
+     */
+    * fetchCourierDetailData({ payload = {} }, { put, call }) {
+      const { taskId, type } = payload;
+      const params = {};
+      // 获取版本id
+      if (is.not.empty(taskId) &amp;&amp; is.existy(taskId)) {
+        params.task_id = taskId;
+      }
+      // 获取方案类型
+      if (is.not.empty(type) &amp;&amp; is.existy(type)) {
+        params.type = Number(type);
+      }
+      const result = yield call(fetchSalaryTaskDetails, params);
+      if (result === undefined) {
+        message.error('获取数据失败');
+        return;
+      }
+      yield put({ type: 'reduceCourierDetailData', payload: result });
+    },
+
+    /**
+     * 获取商圈维度明细数据列表
+     * @param {string} taskId 版本ID
+     * @param {number} type 类型
+     * @memberof module:model/finance/plan~finance/plan/effects
+     */
+    * fetchDistrictsDetailData({ payload = {} }, { put, call }) {
+      const { taskId, type } = payload;
+      const params = {};
+      // 获取版本id
+      if (is.not.empty(taskId) &amp;&amp; is.existy(taskId)) {
+        params.task_id = taskId;
+      }
+      // 获取方案类型
+      if (is.not.empty(type) &amp;&amp; is.existy(type)) {
+        params.type = Number(type);
+      }
+      const result = yield call(fetchSalaryTaskDetails, params);
+      if (result === undefined) {
+        message.error('获取数据失败');
+        return;
+      }
+      yield put({ type: 'reduceDistrictsDetailData', payload: result });
+    },
+
+    /**
+     * 获取试算汇总详情数据列表
+     * @param {string} taskId 版本ID
+     * @memberof module:model/finance/plan~finance/plan/effects
+     */
+    * fetchSalaryPlanSummaryData({ payload = {} }, { put, call }) {
+      const { taskId } = payload;
+      const params = {};
+     // 获取版本id
+      if (is.not.empty(taskId) &amp;&amp; is.existy(taskId)) {
+        params._id = taskId;
+      }
+      const result = yield call(fetchTrialSummaryList, params);
+      if (result === undefined) {
+        message.error('获取数据失败');
+        return;
+      }
+      yield put({ type: 'reduceSalaryPlanSummaryData', payload: result });
+    },
+
+    /**
+     * 获取试算信息的地址
+     * @param {string} taskId 版本ID
+     * @memberof module:model/finance/plan~finance/plan/effects
+     */
+    * fetchSalaryPlanAddressInfo({ payload = {} }, { put, call }) {
+      const { taskId } = payload;
+      const params = {};
+      // 获取版本id
+      if (is.not.empty(taskId) &amp;&amp; is.existy(taskId)) {
+        params._id = taskId;
+      }
+      const result = yield call(fetchTrialSummaryList, params);
+      if (result === undefined) {
+        message.error('获取数据失败');
+        return;
+      }
+      yield put({ type: 'reduceSalaryPlanAddressInfo', payload: result });
+    },
+
+    /**
+     * 获取薪资方案详情
+     * @param {string} id 薪资方案ID
+     * @memberof module:model/finance/plan~finance/plan/effects
+     */
+    *fetchSalaryPlanDetailData({ payload }, { call, put }) {
+      if (is.not.existy(payload.id) || is.empty(payload.id)) {
+        return message.error('缺少薪资方案id');
+      }
+      const params = {
+        _id: payload.id,
+      };
+      const result = yield call(fetchSalaryPlanDetailData, params);
+      if (is.existy(result)) {
+        yield put({ type: 'reduceSalaryPlanDetailData', payload: result });
+      }
+    },
+
+    /**
+     * 导出薪资试算数据列表
+     * @param {string} taskId 版本ID
+     * @memberof module:model/finance/plan~finance/plan/effects
+     */
+    * downloadSalaryPlanList({ payload }, { call }) {
+      const { taskId } = payload;
+      const params = {};
+      // 获取版本id
+      if (is.not.empty(taskId) &amp;&amp; is.existy(taskId)) {
+        params.task_id = taskId;
+      }
+      const result = yield call(downloadSalaryPlanList, params);
+      if (result === undefined) {
+        message.error('获取数据失败');
+      }
+      message.success('获取数据成功');
+    },
+
+    /**
+     * 获取薪资方案版本详情
+     * @param {string} id 薪资方案版本ID
+     * @memberof module:model/finance/plan~finance/plan/effects
+     */
+    *fetchPlanVersionDetailData({ payload }, { call, put }) {
+      if (is.not.existy(payload.id) || is.empty(payload.id)) {
+        return message.error('缺少薪资方案版本id');
+      }
+      const params = {
+        _id: payload.id,
+      };
+      const result = yield call(fetchPlanVersionDetailData, params);
+      if (is.existy(result)) {
+        yield put({ type: 'reducePlanVersionDetailData', payload: { result, planVersionId: payload.id } });
+      }
+    },
+
+    /**
+     * 获取薪资方案规则集详情
+     * @param {string} id 薪资方案版本ID
+     * @memberof module:model/finance/plan~finance/plan/effects
+     */
+    *fetchRuleCollectionData({ payload }, { call, put }) {
+      const params = {
+        _id: payload.id,
+      };
+      const result = yield call(fetchRuleCollectionData, params);
+      if (is.existy(result)) {
+        yield put({ type: 'reduceRuleCollectionData', payload: { result, ruleCollectionId: payload.id } });
+      }
+    },
+
+    /**
+     * 创建薪资规则集
+     * @param {string} planVersionId 版本ID
+     * @param {number} workType 工作性质
+     * @param {function} onSuccessCallback 成功回调
+     * @param {function} onFailureCallback 失败回调
+     * @memberof module:model/finance/plan~finance/plan/effects
+     */
+    *createRuleCollection({ payload }, { put }) {
+      if (is.not.existy(payload.workType) || is.empty(payload.workType)) {
+        return message.error('请选择工作性质');
+      }
+      const params = {
+        plan_version_id: payload.planVersionId,
+        work_type: Number(payload.workType),
+      };
+      // 业务请求
+      const request = {
+        params, // 接口参数
+        service: createRuleCollection,  // 接口
+        onSuccessCallback: payload.onSuccessCallback, // 成功回调
+        onFailureCallback: payload.onFailureCallback, // 失败回调
+      };
+      yield put({ type: 'applicationCore/requestWithCallback', payload: request });
+    },
+
+    /**
+     * 薪资规则集互斥互补
+     * @param {string} id 薪资方案版本ID
+     * @param {boolean} exclusive 薪资规则是否互斥
+     * @param {number} ruleType 规则类型
+     * @param {function} onSuccessCallback 成功回调
+     * @param {function} onFailureCallback 失败回调
+     * @memberof module:model/finance/plan~finance/plan/effects
+     */
+    *updateMutualExclusion({ payload }, { put }) {
+      const params = {
+        rule_collection_id: payload.id,
+        rule_relation: payload.exclusive,
+        type: payload.ruleType,
+      };
+      // 业务请求
+      const request = {
+        params, // 接口参数
+        service: updateMutualExclusion,  // 接口
+        onSuccessCallback: payload.onSuccessCallback, // 成功回调
+        onFailureCallback: payload.onFailureCallback, // 失败回调
+      };
+      yield put({ type: 'applicationCore/requestWithCallback', payload: request });
+    },
+
+    /**
+     * 薪资方案版本删除
+     * @param {string} id 薪资方案版本ID
+     * @param {function} onSuccessCallback 成功回调
+     * @param {function} onFailureCallback 失败回调
+     * @memberof module:model/finance/plan~finance/plan/effects
+     */
+    *deletePlanVersion({ payload }, { put }) {
+      const params = {
+        _id: payload.id,
+      };
+      // 业务请求
+      const request = {
+        params, // 接口参数
+        service: deletePlanVersion,  // 接口
+        onSuccessCallback: payload.onSuccessCallback, // 成功回调
+        onFailureCallback: payload.onFailureCallback, // 失败回调
+      };
+      yield put({ type: 'applicationCore/requestWithCallback', payload: request });
+    },
+
+    /**
+     * 薪资方案待生效版本退回到草稿箱
+     * @param {string} id 薪资方案版本ID
+     * @param {function} onSuccessCallback 成功回调
+     * @param {function} onFailureCallback 失败回调
+     * @memberof module:model/finance/plan~finance/plan/effects
+     */
+    *backPlanVersion({ payload }, { put }) {
+      const params = {
+        plan_version_id: payload.id,
+      };
+      // 业务请求
+      const request = {
+        params, // 接口参数
+        service: cancelToDraft,  // 接口
+        onSuccessCallback: payload.onSuccessCallback, // 成功回调
+        onFailureCallback: payload.onFailureCallback, // 失败回调
+      };
+      yield put({ type: 'applicationCore/requestWithCallback', payload: request });
+    },
+
+    /**
+     * 薪资方案已生效版本调薪
+     * @param {string} id 薪资方案版本ID
+     * @param {function} onSuccessCallback 成功回调
+     * @param {function} onFailureCallback 失败回调
+     * @memberof module:model/finance/plan~finance/plan/effects
+     */
+    *adjustSalaryPlan({ payload }, { put }) {
+      const params = {
+        plan_version_id: payload.id,
+      };
+      // 业务请求
+      const request = {
+        params, // 接口参数
+        service: forkSalaryPlan,  // 接口
+        onSuccessCallback: payload.onSuccessCallback, // 成功回调
+        onFailureCallback: payload.onFailureCallback, // 失败回调
+      };
+      yield put({ type: 'applicationCore/requestWithCallback', payload: request });
+    },
+  },
+
+  /**
+   * @namespace finance/plan/reducers
+   */
+  reducers: {
+    /**
+     * 创建薪资方案列表数据
+     * @return {object} 更新 planListData
+     * @memberof module:model/finance/plan~finance/plan/reducers
+     */
+    reduceSalaryPlanListData(state, action) {
+      const planListData = {
+        meta: ResponseMeta.mapper(action.payload._meta),
+        data: SalaryPlanListItem.mapperEach(action.payload.data, SalaryPlanListItem),
+      };
+      return { ...state, planListData };
+    },
+
+    /**
+     * 创建试算薪资结果列表
+     * @return {object} 更新 calculateResultsData
+     * @memberof module:model/finance/plan~finance/plan/reducers
+     */
+    reduceSalaryPlanResultsData(state, action) {
+      const calculateResultsData = {
+        meta: ResponseMeta.mapper(action.payload._meta),
+        data: SalaryComputeTaskListItem.mapperEach(action.payload.data, SalaryComputeTaskListItem),
+      };
+      return { ...state, calculateResultsData };
+    },
+
+    /**
+     * 试算薪资历史列表
+     * @return {object} 更新 calculateHistoryData
+     * @memberof module:model/finance/plan~finance/plan/reducers
+     */
+    reduceSalaryPlanHistoryData(state, action) {
+      const calculateHistoryData = {
+        meta: ResponseMeta.mapper(action.payload._meta),
+        data: SalaryComputeTaskListItem.mapperEach(action.payload.data, SalaryComputeTaskListItem),
+      };
+      return { ...state, calculateHistoryData };
+    },
+
+    /**
+     * 获取试算地址信息
+     * @return {object} 更新 addressInfo
+     * @memberof module:model/finance/plan~finance/plan/reducers
+     */
+    reduceSalaryPlanAddressInfo(state, action) {
+      const adderssData = [];
+      adderssData.push(action.payload);
+      const addressInfo = {
+        data: SalaryComputeTaskDetail.mapperEach(adderssData, SalaryComputeTaskDetail),
+      };
+      return { ...state, addressInfo };
+    },
+
+    /**
+     * 创建骑士维度明细数据列表
+     * @return {object} 更新 courierData
+     * @memberof module:model/finance/plan~finance/plan/reducers
+     */
+    reduceCourierDetailData(state, action) {
+      const courier = action.payload.data;
+      const courierListData = courier.filter(item => item.type === ExpenseCostCenterType.knight);
+      const courierData = {
+        data: SalaryComputeDataSetListItem.mapperEach(courierListData, SalaryComputeDataSetListItem),
+      };
+      return { ...state, courierData };
+    },
+
+    /**
+     * 创建商圈维度明细数据列表
+     * @return {object} 更新 districtsData
+     * @memberof module:model/finance/plan~finance/plan/reducers
+     */
+    reduceDistrictsDetailData(state, action) {
+      const district = action.payload.data;
+      const districtListData = district.filter(item => item.type === ExpenseCostCenterType.district);
+      const districtsData = {
+        data: SalaryComputeDataSetListItem.mapperEach(districtListData, SalaryComputeDataSetListItem),
+      };
+      return { ...state, districtsData };
+    },
+
+    /**
+     * 创建试算汇总数据列表
+     * @return {object} 更新 calculateSummaryData
+     * @memberof module:model/finance/plan~finance/plan/reducers
+     */
+    reduceSalaryPlanSummaryData(state, action) {
+      const summaryData = [];
+      summaryData.push(action.payload);
+      const calculateSummaryData = {
+        data: SalaryComputeTaskDetail.mapperEach(summaryData, SalaryComputeTaskDetail),
+      };
+      return { ...state, calculateSummaryData };
+    },
+
+    /**
+     * 获取薪资方案详情
+     * @return {object} 更新 salaryPlanDetailData
+     * @memberof module:model/finance/plan~finance/plan/reducers
+     */
+    reduceSalaryPlanDetailData(state, { payload }) {
+      let salaryPlanDetailData = {};
+      if (is.not.empty(payload) &amp;&amp; is.existy(payload)) {
+        salaryPlanDetailData = SalaryPlanDetail.mapper(payload, SalaryPlanDetail);
+      }
+      return {
+        ...state,
+        salaryPlanDetailData,
+      };
+    },
+
+    /**
+     * 获取薪资方案版本详情
+     * @return {object} 更新 planVersionDetailData
+     * @memberof module:model/finance/plan~finance/plan/reducers
+     */
+    reducePlanVersionDetailData(state, { payload }) {
+      let planVersionDetailData = {};
+      if (is.not.empty(payload.result) &amp;&amp; is.existy(payload.result)) {
+        planVersionDetailData = {
+          ...SalaryPlanVersionDetail.mapper(payload.result, SalaryPlanVersionDetail),
+        };
+      }
+      return {
+        ...state,
+        planVersionDetailData: {
+          ...state.planVersionDetailData,
+          [payload.planVersionId]: planVersionDetailData,
+        },
+      };
+    },
+
+    /**
+     * 获取薪资方案规则集详情 ruleCollectionId
+     * @return {object} 更新 ruleCollectionData
+     * @memberof module:model/finance/plan~finance/plan/reducers
+     */
+    reduceRuleCollectionData(state, { payload }) {
+      let ruleCollectionData = {};
+      if (is.not.empty(payload.result) &amp;&amp; is.existy(payload.result)) {
+        ruleCollectionData = SalaryPlanRuleCollection.mapper(payload.result, SalaryPlanRuleCollection);
+      }
+      return {
+        ...state,
+        ruleCollectionData: {
+          ...state.ruleCollectionData,
+          [payload.ruleCollectionId]: ruleCollectionData,
+        },
+      };
+    },
+  },
+};
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-model_account_exception.html">model/account/exception</a></li><li><a href="module-model_account_manage.html">model/account/manage</a></li><li><a href="module-model_accountInfo.html">model/accountInfo</a></li><li><a href="module-model_admin_manage.html">model/admin/manage</a></li><li><a href="module-model_analysis.html">model/analysis</a></li><li><a href="module-model_application_common.html">model/application/common</a></li><li><a href="module-model_application_core.html">model/application/core</a></li><li><a href="module-model_application_files.html">model/application/files</a></li><li><a href="module-model_application_setting.html">model/application/setting</a></li><li><a href="module-model_application_subscription.html">model/application/subscription</a></li><li><a href="module-model_applicationManage.html">model/applicationManage</a></li><li><a href="module-model_district_manage.html">model/district/manage</a></li><li><a href="module-model_employee_contract.html">model/employee/contract</a></li><li><a href="module-model_employee_manage.html">model/employee/manage</a></li><li><a href="module-model_employee_transport.html">model/employee/transport</a></li><li><a href="module-model_expense_approval.html">model/expense/approval</a></li><li><a href="module-model_expense_borrowingRepaments.html">model/expense/borrowingRepaments</a></li><li><a href="module-model_expense_costOrder.html">model/expense/costOrder</a></li><li><a href="module-model_expense_examineFlow.html">model/expense/examineFlow</a></li><li><a href="module-model_expense_examineOrder.html">model/expense/examineOrder</a></li><li><a href="module-model_expense_houseContract.html">model/expense/houseContract</a></li><li><a href="module-model_expense_subject.html">model/expense/subject</a></li><li><a href="module-model_expense_type.html">model/expense/type</a></li><li><a href="module-model_finance_plan.html">model/finance/plan</a></li><li><a href="module-model_finance_task.html">model/finance/task</a></li><li><a href="module-model_financeFundsConfig.html">model/financeFundsConfig</a></li><li><a href="module-model_financeRulesGenerator.html">model/financeRulesGenerator</a></li><li><a href="module-model_financeSummaryManage.html">model/financeSummaryManage</a></li><li><a href="module-model_inquireModel.html">model/inquireModel</a></li><li><a href="module-model_materials.html">model/materials</a></li><li><a href="module-model_operationManage.html">model/operationManage</a></li><li><a href="module-model_supplier_manage.html">model/supplier/manage</a></li><li><a href="module-model_supply_deductions.html">model/supply/deductions</a></li><li><a href="module-model_supply_details.html">model/supply/details</a></li><li><a href="module-model_supply_distribution.html">model/supply/distribution</a></li><li><a href="module-model_supply_procurement.html">model/supply/procurement</a></li><li><a href="module-model_supply_set.html">model/supply/set</a></li><li><a href="module-model_system.html">model/system</a></li><li><a href="module-model_system_city.html">model/system/city</a></li><li><a href="module-model_system_download.html">model/system/download</a></li><li><a href="module-model_system_manage.html">model/system/manage</a></li><li><a href="module-model_system_recommendedCompany.html">model/system/recommendedCompany</a></li><li><a href="module-model_upload.html">model/upload</a></li><li><a href="module-services_account.html">services/account</a></li><li><a href="module-services_analysis.html">services/analysis</a></li><li><a href="module-services_employee.html">services/employee</a></li><li><a href="module-services_expense.html">services/expense</a></li><li><a href="module-services_expense_borrowingRepayment.html">services/expense/borrowingRepayment</a></li><li><a href="module-services_expense_costOrder.html">services/expense/costOrder</a></li><li><a href="module-services_expense_examineOrder.html">services/expense/examineOrder</a></li><li><a href="module-services_expense_houseContract.html">services/expense/houseContract</a></li><li><a href="module-services_finance.html">services/finance</a></li><li><a href="module-services_finance_funds.html">services/finance/funds</a></li><li><a href="module-services_inquire.html">services/inquire</a></li><li><a href="module-services_login.html">services/login</a></li><li><a href="module-services_salary.html">services/salary</a></li><li><a href="module-services_setting.html">services/setting</a></li><li><a href="module-services_stores.html">services/stores</a></li><li><a href="module-services_system.html">services/system</a></li><li><a href="module-services_system_city.html">services/system/city</a></li><li><a href="module-services_system_recommendedCompany.html">services/system/recommendedCompany</a></li><li><a href="module-services_system_supplier.html">services/system/supplier</a></li><li><a href="module-services_upload.html">services/upload</a></li></ul><h3>Namespaces</h3><ul><li><a href="module-model_account_exception-account_exception_effects.html">account/exception/effects</a></li><li><a href="module-model_account_exception-account_exception_reducers.html">account/exception/reducers</a></li><li><a href="module-model_account_exception-account_exception_subscriptions.html">account/exception/subscriptions</a></li><li><a href="module-model_account_manage-account_manage_effects.html">account/manage/effects</a></li><li><a href="module-model_account_manage-account_manage_reducers.html">account/manage/reducers</a></li><li><a href="module-model_accountInfo-account_accountInfo_effects.html">account/accountInfo/effects</a></li><li><a href="module-model_accountInfo-account_accountInfo_reducers.html">account/accountInfo/reducers</a></li><li><a href="module-model_accountInfo-account_accountInfo_subscriptions.html">account/accountInfo/subscriptions</a></li><li><a href="module-model_admin_manage-admin_manage_effects.html">admin/manage/effects</a></li><li><a href="module-model_admin_manage-admin_manage_reducers.html">admin/manage/reducers</a></li><li><a href="module-model_admin_manage-admin_manage_subscriptions.html">admin/manage/subscriptions</a></li><li><a href="module-model_analysis-analysis_effects.html">analysis/effects</a></li><li><a href="module-model_analysis-analysis_reducers.html">analysis/reducers</a></li><li><a href="module-model_analysis-analysis_subscriptions.html">analysis/subscriptions</a></li><li><a href="module-model_application_common-application_common_effects.html">application/common/effects</a></li><li><a href="module-model_application_common-application_common_reducers.html">application/common/reducers</a></li><li><a href="module-model_application_core-application_core_effects.html">application/core/effects</a></li><li><a href="module-model_application_files-application_files_effects.html">application/files/effects</a></li><li><a href="module-model_application_files-application_files_reducers.html">application/files/reducers</a></li><li><a href="module-model_application_setting-application_setting_effects.html">application/setting/effects</a></li><li><a href="module-model_application_setting-application_setting_reducers.html">application/setting/reducers</a></li><li><a href="module-model_application_subscription-application_subscription_subscriptions.html">application/subscription/subscriptions</a></li><li><a href="module-model_applicationManage-applicationManage_effects.html">applicationManage/effects</a></li><li><a href="module-model_applicationManage-applicationManage_reducers.html">applicationManage/reducers</a></li><li><a href="module-model_district_manage-district_manage_effects.html">district/manage/effects</a></li><li><a href="module-model_district_manage-district_manage_reducers.html">district/manage/reducers</a></li><li><a href="module-model_employee_contract-employee_contract_effects.html">employee/contract/effects</a></li><li><a href="module-model_employee_contract-employee_contract_reducers.html">employee/contract/reducers</a></li><li><a href="module-model_employee_manage-employee_manage_effects.html">employee/manage/effects</a></li><li><a href="module-model_employee_manage-employee_manage_reducers.html">employee/manage/reducers</a></li><li><a href="module-model_employee_transport-employee_transport_effects.html">employee/transport/effects</a></li><li><a href="module-model_employee_transport-employee_transport_reducers.html">employee/transport/reducers</a></li><li><a href="module-model_expense_approval-expense_approval_effects.html">expense/approval/effects</a></li><li><a href="module-model_expense_approval-expense_approval_reducers.html">expense/approval/reducers</a></li><li><a href="module-model_expense_approval-expense_approval_subscriptions.html">expense/approval/subscriptions</a></li><li><a href="module-model_expense_borrowingRepaments-expense_borrowingRepayment_effects.html">expense/borrowingRepayment/effects</a></li><li><a href="module-model_expense_borrowingRepaments-expense_costOrder_reducers.html">expense/costOrder/reducers</a></li><li><a href="module-model_expense_costOrder-expense_costOrder_effects.html">expense/costOrder/effects</a></li><li><a href="module-model_expense_costOrder-expense_costOrder_reducers.html">expense/costOrder/reducers</a></li><li><a href="module-model_expense_examineFlow-expense_examineFlow_effects.html">expense/examineFlow/effects</a></li><li><a href="module-model_expense_examineFlow-expense_examineFlow_reducers.html">expense/examineFlow/reducers</a></li><li><a href="module-model_expense_examineOrder-expense_examineOrder_effects.html">expense/examineOrder/effects</a></li><li><a href="module-model_expense_examineOrder-expense_examineOrder_reducers.html">expense/examineOrder/reducers</a></li><li><a href="module-model_expense_houseContract-expense_houseContract_effects.html">expense/houseContract/effects</a></li><li><a href="module-model_expense_houseContract-expense_houseContract_reducers.html">expense/houseContract/reducers</a></li><li><a href="module-model_expense_houseContract-expense_houseContract_subscriptions.html">expense/houseContract/subscriptions</a></li><li><a href="module-model_expense_subject-expense_subject_effects.html">expense/subject/effects</a></li><li><a href="module-model_expense_subject-expense_subject_reducers.html">expense/subject/reducers</a></li><li><a href="module-model_expense_subject-expense_subject_subscriptions.html">expense/subject/subscriptions</a></li><li><a href="module-model_expense_type-expense_type_effects.html">expense/type/effects</a></li><li><a href="module-model_expense_type-expense_type_reducers.html">expense/type/reducers</a></li><li><a href="module-model_finance_plan-finance_plan_effects.html">finance/plan/effects</a></li><li><a href="module-model_finance_plan-finance_plan_reducers.html">finance/plan/reducers</a></li><li><a href="module-model_finance_task-finance_task_effects.html">finance/task/effects</a></li><li><a href="module-model_finance_task-finance_task_reducers.html">finance/task/reducers</a></li><li><a href="module-model_financeFundsConfig-financeFundsConfig_effects.html">financeFundsConfig/effects</a></li><li><a href="module-model_financeFundsConfig-financeFundsConfig_reducers.html">financeFundsConfig/reducers</a></li><li><a href="module-model_financeRulesGenerator-financeRulesGenerator_effects.html">financeRulesGenerator/effects</a></li><li><a href="module-model_financeRulesGenerator-financeRulesGenerator_reducers.html">financeRulesGenerator/reducers</a></li><li><a href="module-model_financeSummaryManage-financeSummaryManage_effects.html">financeSummaryManage/effects</a></li><li><a href="module-model_financeSummaryManage-financeSummaryManage_reducers.html">financeSummaryManage/reducers</a></li><li><a href="module-model_financeSummaryManage-financeSummaryManage_subscriptions.html">financeSummaryManage/subscriptions</a></li><li><a href="module-model_inquireModel-inquireModel_effects.html">inquireModel/effects</a></li><li><a href="module-model_inquireModel-inquireModel_reducers.html">inquireModel/reducers</a></li><li><a href="module-model_materials-financeConfigIndex_effects.html">financeConfigIndex/effects</a></li><li><a href="module-model_materials-financeConfigIndex_reducers.html">financeConfigIndex/reducers</a></li><li><a href="module-model_materials-financeConfigTags_effects.html">financeConfigTags/effects</a></li><li><a href="module-model_materials-financeConfigTags_reducers.html">financeConfigTags/reducers</a></li><li><a href="module-model_materials-financeFundsManage_effects.html">financeFundsManage/effects</a></li><li><a href="module-model_materials-financeFundsManage_reducers.html">financeFundsManage/reducers</a></li><li><a href="module-model_materials-materials_effects.html">materials/effects</a></li><li><a href="module-model_materials-materials_reducers.html">materials/reducers</a></li><li><a href="module-model_materials-materials_subscriptions.html">materials/subscriptions</a></li><li><a href="module-model_operationManage-operationManage_effects.html">operationManage/effects</a></li><li><a href="module-model_operationManage-operationManage_reducers.html">operationManage/reducers</a></li><li><a href="module-model_supplier_manage-supplier_manage_effects.html">supplier/manage/effects</a></li><li><a href="module-model_supplier_manage-supplier_manage_reducers.html">supplier/manage/reducers</a></li><li><a href="module-model_supply_deductions-supply_deductions_effects.html">supply/deductions/effects</a></li><li><a href="module-model_supply_deductions-supply_deductions_reducers.html">supply/deductions/reducers</a></li><li><a href="module-model_supply_deductions-supply_deductSummarize_effects.html">supply/deductSummarize/effects</a></li><li><a href="module-model_supply_deductions-supply_deductSummarize_reducers.html">supply/deductSummarize/reducers</a></li><li><a href="module-model_supply_details-supply_details_effects.html">supply/details/effects</a></li><li><a href="module-model_supply_details-supply_details_reducers.html">supply/details/reducers</a></li><li><a href="module-model_supply_distribution-supply_distribution_effects.html">supply/distribution/effects</a></li><li><a href="module-model_supply_distribution-supply_distribution_reducers.html">supply/distribution/reducers</a></li><li><a href="module-model_supply_procurement-supply_procurement_effects.html">supply/procurement/effects</a></li><li><a href="module-model_supply_procurement-supply_procurement_reducers.html">supply/procurement/reducers</a></li><li><a href="module-model_supply_set-supply_set_effects.html">supply/set/effects</a></li><li><a href="module-model_supply_set-supply_set_reducers.html">supply/set/reducers</a></li><li><a href="module-model_system_city-system_city_effects.html">system/city/effects</a></li><li><a href="module-model_system_city-system_city_reducers.html">system/city/reducers</a></li><li><a href="module-model_system_download-system_download_effects.html">system/download/effects</a></li><li><a href="module-model_system_download-system_download_reducers.html">system/download/reducers</a></li><li><a href="module-model_system_manage-system_manage_effects.html">system/manage/effects</a></li><li><a href="module-model_system_manage-system_manage_reducers.html">system/manage/reducers</a></li><li><a href="module-model_system_recommendedCompany-system_recommendedCompany_effects.html">system/recommendedCompany/effects</a></li><li><a href="module-model_system_recommendedCompany-system_recommendedCompany_reducers.html">system/recommendedCompany/reducers</a></li><li><a href="module-model_system-system_effects.html">system/effects</a></li><li><a href="module-model_system-system_reducers.html">system/reducers</a></li><li><a href="module-model_system-system_subscriptions.html">system/subscriptions</a></li><li><a href="module-model_upload-upload_effects.html">upload/effects</a></li><li><a href="module-model_upload-upload_reducers.html">upload/reducers</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sun Apr 28 2019 11:25:15 GMT+0800 (CST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

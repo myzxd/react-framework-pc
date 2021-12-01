@@ -1,0 +1,17 @@
+# 详情
+detail_data:
+  params:
+    - name: _id
+      type: object_id
+      required: true
+      note: 主键id
+      enum_values: ''
+
+# 删除
+delete_data:
+  params:
+    - name: _id
+      type: object_id
+      required: true
+      note: 主键id
+      enum_values: ''

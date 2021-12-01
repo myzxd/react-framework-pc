@@ -1,0 +1,24 @@
+/* layout样式 */
+.page-container {
+  height: 100vh;
+  padding: 10px 0px
+}
+
+.page-silder {
+  height: 100vh;
+}
+
+.page-content {
+  height: 100vh;
+  padding: 0px 20px;
+}
+
+/* 新建按钮容器样式 */
+.app-comp-organization-silder-create-wrap {
+  margin: 10px 0;
+}
+
+/* 新建按钮容器样式 */
+.app-comp-organization-silder-create-button {
+  width: 100%!important;
+}

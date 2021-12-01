@@ -1,0 +1,26 @@
+- module: 'salary_var'
+  apis:
+  - api_ns: 'salary_var'
+    cmd_list:
+    - summary: 获取下拉指标列表
+      description: 获取下拉指标列表
+      cmd: find
+      params:
+        - name: platform_code
+          type: string
+          required: true
+          note: 平台
+          enum_values: ''
+        - name: type
+          type: int
+          required: true
+          note: 类型
+          enum_values: '1:订单类型,2:满足条件,3:站点评星'
+      result: {}
+      param_example:
+        platform_code: 'elem'
+        type: 1
+      result_example:
+        ok: true
+        _id: '5a655eaace6d2a430f748f82'
+        name: '外单'

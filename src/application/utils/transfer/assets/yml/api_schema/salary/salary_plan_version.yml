@@ -1,0 +1,163 @@
+- module: 'salary_plan_version'
+  apis:
+  - api_ns: 'salary_plan_version'
+    cmd_list:
+    - summary: 服务费方案版本删除
+      description: '服务费方案版本删除'
+      cmd: delete
+      params_schema:
+        schema: 'delete_data'
+      result: {}
+      param_example:
+        plan_version_id: '5a655eaace6d2a430f748f82'
+      result_example:
+          ok: true
+          plan_version_id: '5a655eaace6d2a430f748f82'
+          plan_id: '5a655eaace6d2a430f748f82'
+
+    - summary: 服务费方案版本列表
+      description: '服务费方案版本列表'
+      cmd: find
+      params:
+        - name: plan_id
+          type: object_id
+          required: true
+          note: '服务费方案id'
+          enum_values: ''
+      result:
+        type: 'api_result_set_with_meta'
+        schema: 'salary_plan_version_list_item'
+      param_example:
+        plan_version_id: '5a655eaace6d2a430f748f82'
+      result_example:
+          ok: true
+          _id: '5a655eaace6d2a430f748f82'
+          plan_version_id: '5a655eaace6d2a430f748f82'
+          plan_id: '5a655eaace6d2a430f748f82'
+          name: '杀戮空间'
+          revision: '123453121234'
+          platform_code: '12321'
+          supplier_id: '5a655eaace6d2a430f748f82'
+          city_code: '12321'
+          city_name: ’天津‘
+          biz_district_id: '5a655eaace6d2a430f748f82'
+          state: 100
+          domain: 2
+          rules_list: []
+          config_version_id: '5a655eaace6d2a430f748f82'
+          from_date: '2018-10-09 18:59:20'
+          oa_operator_id: '5a655eaace6d2a430f748f82'
+
+    - summary: 服务费方案版本详情
+      description: '服务费方案版本详情'
+      cmd: get
+      params:
+        - name: id
+          type: object_id
+          required: true
+          note: '版本ID'
+          enum_values: ''
+      result:
+        type: 'api_result'
+        schema: 'salary_plan_version_detail'
+      param_example:
+        plan_version_id: '5a655eaace6d2a430f748f82'
+        work_type: 3001
+      result_example:
+        _id: '5a655eaace6d2a430f748f82'
+        name: '杀戮空间'
+        revision: '123453121234'
+        platform_code: '12321'
+        supplier_id: '5a655eaace6d2a430f748f82'
+        city_code: '12321'
+        biz_district_id: '5a655eaace6d2a430f748f82'
+        state: 100
+        domain: 2
+        rules: [
+          {
+            plan_version_id: '5a655eaace6d2a430f748f82',
+            plan_id: '5a655eaace6d2a430f748f82',
+            work_type: 3001,
+            order_rules: [],
+            order_rule_flag: false,
+            order_rule_relation: 1,
+            work_rules: [],
+            work_rule_relation: 1,
+            work_rule_flag: true,
+            qa_rules: [],
+            qa_rule_relation: 2,
+            qa_rule_flag: false,
+            operation_rules: [],
+            operation_rule_relation: 1,
+            operation_rule_flag: true,
+            created_at: '2018-10-09 18:59:20'
+            }
+          ]
+        config_version_id: '5a655eaace6d2a430f748f82'
+        from_date: '2018-10-09 18:59:20'
+        to_date: '2018-10-09 18:59:20'
+        oa_applied_at: '2018-10-09 18:59:20'
+        oa_done_at: '2018-10-09 18:59:20'
+        active_at: '2018-10-09 18:59:20'
+        closed_at: '2018-10-09 18:59:20'
+        updated_at: '2018-10-09 18:59:20'
+        created_at: '2018-10-09 18:59:20'
+        disabled_at: '2018-10-09 18:59:20'
+        creator_id: '5a655eaace6d2a430f748f82'
+        operator_id: '5a655eaace6d2a430f748f82'
+        oa_apply_operator_id: '5a655eaace6d2a430f748f82'
+        oa_operator_id: '5a655eaace6d2a430f748f82'
+        dry_run_task_id: '5a655eaace6d2a430f748f82'
+        city_name: '我的撒'
+        biz_district_name: '虹桥'
+        plan_id: '5a655eaace6d2a430f748f82'
+        plan_version_id: '5a655eaace6d2a430f748f82'
+        plan_revision_id: '5a655eaace6d2a430f748f82'
+        compute_context: {}
+        vdoing: ‘骑士维度’
+        compute_dataset_info: {
+           finish_order_quantity: 200,
+            trials_total_money: 20000,
+            total_amount: 20000,
+            total_subsidy: 20000,
+            total_manage: 20000,
+            }
+        knight_info: {
+            knight_name: '黄晓明',
+            knight_id: '5a655eaace6d2a430f748f82',
+            phone: '15011331749'
+                }
+
+    - summary: 服务费方案待生效版本退回到草稿箱
+      description: '服务费方案待生效版本退回到草稿箱'
+      cmd: cancel_to_draft
+      params:
+        - name: plan_version_id
+          type: object_id
+          required: true
+          note: ‘服务费方案版本id’
+          enum_values: ''
+      result: {}
+      param_example:
+        plan_version_id: '5a655eaace6d2a430f748f82'
+      result_example:
+        ok: true
+        plan_version_id: '5a655eaace6d2a430f748f82'
+        plan_id: '5a655eaace6d2a430f748f82'
+
+    - summary: 派生新的服务费方案版本
+      description: '服务费方案已生效版本调薪'
+      cmd: fork
+      params:
+        - name: plan_version_id
+          type: object_id
+          required: true
+          note: ‘服务费方案版本id’
+          enum_values: ''
+      result: {}
+      param_example:
+        plan_version_id: '5a655eaace6d2a430f748f82'
+      result_example:
+        ok: true
+        plan_version_id: '5a655eaace6d2a430f748f82'
+        plan_id: '5a655eaace6d2a430f748f82'

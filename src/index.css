@@ -1,0 +1,133 @@
+@import "style.css";
+
+/* 之家&老板公用样式 */
+/* 限制页面无法上下回弹 */
+:global html, :global body, :global #root {
+	height: 100%;
+	width: 100%;
+	overflow: hidden;
+}
+
+/* 去除a标签focus状态的下划线 */
+:global #root a:focus {
+	text-decoration: none;
+}
+
+/* 宽度 */
+:global .app-global-componenth-width-percent100 {
+    width: 100%;
+}
+:global .app-global-componenth-width100 {
+    width: 100px;
+}
+
+/*全局 margin 属性*/
+:global #root .app-global-mgb8 {
+	margin-bottom: 8px;
+}
+:global #root .app-global-mgt8 {
+	margin-top: 8px;
+}
+:global #root .app-global-mgl8 {
+	margin-left: 8px;
+}
+:global #root .app-global-mgr8 {
+	margin-right: 8px;
+}
+:global #root .app-global-mgr10 {
+	margin-right: 10px;
+}
+
+:global #root .app-global-mgt10 {
+	margin-top: 10px;
+}
+:global #root .app-global-mgb10 {
+	margin-bottom: 10px;
+}
+:global #root .app-global-mgl16 {
+	margin-left: 16px;
+}
+:global #root .app-global-mgt16 {
+	margin-top: 16px;
+}
+:global #root .app-global-mgr24 {
+	margin-right: 24px;
+}
+:global #root .app-global-mgb30 {
+	margin-bottom: 30px;
+}
+:global #root .app-global-mgl32 {
+	margin-left: 32px;
+}
+:global #root .app-global-mgl50 {
+	margin-left: 50px;
+}
+:global #root .app-global-mg20 {
+	margin: 20px;
+}
+
+/*Tooltip颜色修改*/
+:global body .ant-tooltip-inner {
+	background: #ffffff;
+	box-shadow: 0 1px 1px 2px rgba(0, 0, 0, 0.1);
+	color: #000000;
+}
+:global body .ant-tooltip-placement-top .ant-tooltip-arrow {
+	border-top-color: #ffffff;
+}
+
+/*AllSelect组件高度问题*/
+:global .maxHeight .ant-select-selection__rendered {
+	max-height: 30px !important;
+	overflow: auto !important;
+}
+
+/* 查看人员菜单样式 */
+:global .ant-menu-horizontal {
+	margin-bottom: 10px !important;
+	border-bottom: 1px solid #e2e2e2;
+}
+:global .ant-menu-horizontal > .ant-menu-item {
+	font-size: 16px;
+}
+
+/* 覆盖RangPicker默认高亮今天样式 */
+:global .ant-calendar-today div.ant-calendar-date {
+  border: 1px solid #FF7700;
+  color: #FF7700;
+  background: none;
+}
+
+/* 覆盖RangPicker默认高亮今天样式 鼠标 */
+:global .ant-calendar-today div.ant-calendar-date:hover {
+  border: 1px solid #FF7700;
+  color: #fff;
+  background: #FF7700;
+}
+
+/* 覆盖RangPicker选中的日期样式 */
+:global .ant-calendar-selected-start-date.ant-calendar-today .ant-calendar-date, :global .ant-calendar-selected-end-date.ant-calendar-today .ant-calendar-date {
+  color: #fff;
+  background: #FF7700;
+  border: 1px solid transparent;
+}
+
+/* 覆盖@ant-design/compatible的Form样式 */
+:global .ant-legacy-form, :global .ant-legacy-form-item, :global .ant-legacy-form label, :global .ant-legacy-form-item label, :global .ant-legacy-form-explain {
+  font-size: 12px !important;
+}
+
+:global .ant-select:not(.ant-select-customize-input) .ant-select-selector .ant-select-selection-search-input {
+  margin: 0;
+  padding: 0;
+  background: 0 0;
+  border: none;
+  outline: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+:global .ant-tree-title {
+  word-break: break-all !important;
+}

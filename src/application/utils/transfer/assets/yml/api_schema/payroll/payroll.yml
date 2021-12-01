@@ -1,0 +1,166 @@
+- module: 'payroll'
+  apis:
+  - api_ns: 'payroll'
+    cmd_list:
+      - summary: 结算单列表
+        description: '对应UI页:城市汇总页结算单列表'
+        cmd: find
+        params:
+          - name: salary_statement_id
+            type: string
+            required: false
+            note: '结算单账单ID'
+            enum_values: ''
+          - name: biz_district_id
+            type: object_id
+            required: false
+            note: '商圈ID'
+            enum_values: ''
+          - name: name
+            type: string
+            required: false
+            note: '姓名'
+            enum_values: ''
+          - name: pay_salary_state
+            type: int
+            required: false
+            note: '服务费发放状态(1:正常,2:缓发)'
+            enum_values: ''
+        result:
+          type: 'api_result_set_with_meta'
+          schema: 'payroll_list_item'
+        param_example:
+          biz_district_id: '5a655eaace6d2a430f748f82'
+          name: '大力'
+        result_example:
+          _ids: ['5a655eaace6d2a430f748f82', '5a655eaace6d2a430f748f82']
+          supplier_id: '5a655eaace6d2a430f748f82'
+          city_code: 'beijing'
+          platform_code: 'elem'
+          name: '大力'
+          position_id: 1010
+          state: 100
+          knight_type_id: '5a655eaace6d2a430f748f82'
+          entry_date: '2018-10-10 18:10:10'
+          contract_belong_id: '5a655eaace6d2a430f748f82'
+          identity_card_id: '220502199912291211'
+          phone: 13155556666
+          order_count: 500
+          order_amount: {}
+          work_amount: {}
+          qa_amount: {}
+          staff_payment_total: 1000
+          staff_deduction_total: 500
+          material_deduction_total: 200
+          real_pay_salary_total: {}
+          human_affairs_deduction_total: {}
+          actual_pay_salary_total: {}
+          single_average_amount: {}
+          pay_salary_state: 100
+#          出单天数: 20
+#          人效: 100
+#          有效出勤: 28
+#          管理扣罚: 500
+#          物资应扣保证金: 200
+      - summary: 结算单详情
+        description: 对应UI页:城市汇总页结算单详情
+        cmd: get
+        params_schema: 'detail_data'
+        result:
+          type: 'api_result'
+          schema: 'payroll_detail'
+        param_example:
+          id: '5a655eaace6d2a430f748f82'
+        result_example:
+          name: '大力'
+          identity_card_id: '220502199912291211'
+          phone: 13155556666
+          bank_card_id: 6214830176215837
+          bank_branch: '招商银行'
+          bank_location: '北京市'
+          platform_code: 'elem'
+          supplier_id: '5a655eaace6d2a430f748f82'
+          city_code: 'beijing'
+          position_id: 1010
+          state: 100
+          entry_date: '2018-10-10 18:10:10'
+          recruitment_channel_id: '转签'
+          contract_belong_id: '5a655eaace6d2a430f748f82'
+          departure_date: '2018-10-10 18:10:10'
+          departure_log: '2017-06-10 18:10:10'
+          knight_type_id: '5a655eaace6d2a430f748f82'
+          order_count: 500
+#          出单天数: 20
+#          人效: 100
+#          有效出勤: 28
+#          准时单量: 100
+#          超时单量: 20
+#          好评单量: 100
+#          差评单量: 10
+#          单量提成: 1000
+#          出勤补贴: 1000
+#          质量补贴: 1000
+#          管理扣罚: 1000
+#          新项目: 1000
+#          骑士补款: {
+#            特殊时段补贴: 1000,
+#            特殊季节补贴: 1000,
+#            恶劣天气补贴: 1000,
+#            优秀人员奖励: 1000,
+#            调整考勤差异: 1000,
+#            调整单量差异: 1000,
+#            扣罚减免: 1000,
+#            工龄补助: 1000,
+#            充电补助: 1000,
+#            车补: 1000,
+#            话补: 1000,
+#            装备押金返还: 1000,
+#            其他补款: 1000
+#          }
+#          骑士扣款: {
+#            平台线下罚款: 1000,
+#            住宿/房租扣款: 1000,
+#            水电网费扣款: 1000,
+#            违反站内管理扣款: 1000,
+#            意外险扣款: 1000,
+#            社保代缴扣款(单位承担): 1000,
+#            电动车扣款: 1000,
+#            装备扣款: 1000,
+#            装备押金扣款: 1000,
+#            其他扣款: 1000
+#          }
+#          物资扣款: {
+#            实扣物资扣款: 1000,
+#            实扣物资保证金总额: 1000
+#          }
+#          应发工资: {
+#            实扣装备扣款: 1000,
+#            实扣装备保证金: 1000,
+#            实扣跨行扣款: 1000,
+#            实扣三方扣款: 1000
+#          }
+#          人事扣款: 1000
+#          实发工资: 1000
+
+      - summary: 标记缓发
+        description: 对应UI页:城市汇总页缓发
+        cmd: mark_pay_paused
+        params:
+          - name: ids
+            type: '[object_id]'
+            required: true
+            note: '主键ID'
+            enum_values: ''
+          - name: pay_salary_state
+            type: int
+            required: false
+            note: '缓发状态(1:正常, -1:缓发)'
+            enum_values: ''
+        params_schema: 'detail_data'
+        result: {}
+        param_example:
+          _id: '5a655eaace6d2a430f748f82'
+          pay_salary_state: 1
+        result_example:
+          ok: true
+          _id: '5a655eaace6d2a430f748f82'

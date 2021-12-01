@@ -1,0 +1,286 @@
+- module: 'payroll_plan'
+  apis:
+  - api_ns: 'payroll_plan'
+    cmd_list:
+      - summary: 结算计划创建
+        description: 对应UI页:结算计划创建
+        cmd: create
+        params:
+          - name: platform_code
+            type: string
+            required: true
+            note: '平台'
+            enum_values: ''
+          - name: city_code
+            type: string
+            required: true
+            note: '城市'
+            enum_values: ''
+          - name: supplier_id
+            type: object_id
+            required: true
+            note: '供应商ID'
+            enum_values: ''
+          - name: work_type
+            type: int
+            required: true
+            note: '工作性质(3001:全职,3002:兼职)'
+            enum_values: ''
+          - name: init_execute_date
+            type: int
+            required: true
+            note: '首次计算执行日(yyyymmdd)'
+            enum_values: ''
+          - name: payroll_cycle_type
+            type: int
+            required: true
+            note: '结算周期类型(1:按月,2:按日)'
+            enum_values: ''
+          - name: cycle_interval
+            type: int
+            required: true
+            note: '结算周期值（天/月）'
+            enum_values: ''
+          - name: compute_delay_days
+            type: int
+            required: true
+            note: '计算预留后延天数'
+            enum_values: ''
+          - name: adjustment_flag
+            type: bool
+            required: true
+            note: '扣补款标示(true:有款型，false:无款项)'
+            enum_values: ''
+        result: {}
+        param_example:
+          platform_code: 'elem'
+          city_code: 'beijing'
+          supplier_id: '5a655eaace6d2a430f748f82'
+          work_type: 3001
+          init_execute_date: 20181010
+          payroll_cycle_type: 1
+          cycle_interval: 2
+          compute_delay_days: 6
+          adjustment_flag: true
+        result_example:
+          ok: true
+          _id: 5a655eaace6d2a430f748f82
+          platform_code: 'elem'
+          city_code: 'beijing'
+          supplier_id: '5a655eaace6d2a430f748f82'
+          work_type: 3001
+          init_execute_date: 20181010
+          payroll_cycle_type: 1
+          cycle_interval: 2
+          compute_delay_days: 6
+          adjustment_flag: true
+
+      - summary: 结算计划列表
+        description: 对应UI页:结算计划列表
+        cmd: find
+        params:
+          - name: platform_code
+            type: string
+            required: false
+            note: '平台'
+            enum_values: ''
+          - name: city_code
+            type: string
+            required: false
+            note: '城市'
+            enum_values: ''
+          - name: supplier_id
+            type: object_id
+            required: false
+            note: '供应商ID'
+            enum_values: ''
+          - name: work_type
+            type: int
+            required: false
+            note: '工作性质(3001:全职,3002:兼职)'
+            enum_values: ''
+        result:
+          type: 'api_result_set_with_meta'
+          schema: 'payroll_plan_list_item'
+        param_example:
+          platform_code: 'elem'
+          city_code: 'beijing'
+          supplier_id: '5a655eaace6d2a430f748f82'
+          work_type: 3001
+        result_example:
+          _id: '5a655eaace6d2a430f748f82'
+          platform_code: 'elem'
+          city_code: 'beijing'
+          work_type: 3001
+          cycle_interval: 2
+          init_execute_date: 5
+          ajustment_flag: true
+          created_at: '2018-10-10 08:50:08'
+          creator_id: '5a655eaace6d2a430f748f82'
+          updated_at: '2018-10-10 08:50:08'
+          operator_id: '5a655eaace6d2a430f748f82'
+
+      - summary: 结算计划详情
+        description: 对应UI页:结算计划详情(编辑调详情'待定')
+        cmd: get
+        params:
+          - name: _id
+            type: object_id
+            required: true
+            note: '结算计划ID'
+            enum_values: ''
+          - name: state
+            type: int
+            required: true
+            note: '状态(100:启用，-100:禁用, -101:删除)'
+            enum_values: ''
+        result:
+          type: 'api_result'
+          schema: 'payroll_plan_detail'
+        param_example:
+          id: '5a655eaace6d2a430f748f82'
+        result_example:
+          platform_code: 'elem'
+          city_code: 'beijing'
+          work_type: 3001
+          salary_cycle: 2
+          activate_date: '2018-10-10'
+          compute_execute_date: 5
+          payment_and_deduction_flag: true
+
+      - summary: 结算计划编辑
+        description: 对应UI页:结算计划编辑
+        cmd: update
+        params:
+          - name: _id
+            type: object_id
+            required: true
+            note: '结算计划ID'
+            enum_values: ''
+          - name: payroll_cycle_type
+            type: int
+            required: true
+            note: '结算周期'
+            enum_values: ''
+          - name: cycle_interval
+            type: int
+            required: true
+            note: '计算执行日(下次结算单生成日期)'
+            enum_values: ''
+          - name: adjustment_flag
+            type: bool
+            required: true
+            note: '扣补款标示(true:有款型，false:无款项)'
+            enum_values: ''
+          - name: compute_delay_days
+            type: int
+            required: true
+            note: '计算预留后延天数'
+            enum_values: ''
+        result: {}
+        param_example:
+          _id: '5a655eaace6d2a430f748f82'
+          salary_cycle: 1
+          compute_execute_date: 6
+          payment_and_deduction_flag: true
+        result_example:
+          ok: true
+
+      - summary: 停用、启用
+        description: 对应UI页:结算计划停用、启用
+        cmd: toggle
+        params:
+          - name: _id
+            type: ObjectId
+            required: true
+            note: '主键ID'
+            enum_values: ''
+          - name: state
+            type: int
+            required: true
+            note: '状态(100:启用，-100:禁用, -101:删除)'
+            enum_values: ''
+        result: {}
+        param_example:
+          _id: '5a655eaace6d2a430f748f82'
+          state: 100
+        result_example:
+          ok: true
+          _id: '5a655eaace6d2a430f748f82'
+
+- module: 'payroll_plan'
+  apis:
+  - api_ns: 'payroll_plan'
+    cmd_list:
+      - summary: 结算计划批量创建
+        description: 对应UI页:结算计划创建
+        cmd: batch_create
+        params:
+          - name: platform_code
+            type: string
+            required: true
+            note: '平台'
+            enum_values: ''
+          - name: city_code
+            type: string
+            required: true
+            note: '城市'
+            enum_values: ''
+          - name: supplier_id
+            type: object_id
+            required: true
+            note: '供应商ID'
+            enum_values: ''
+          - name: work_type
+            type: '[int]'
+            required: true
+            note: '工作性质(3001:全职,3002:兼职)'
+            enum_values: ''
+          - name: init_execute_date
+            type: int
+            required: true
+            note: '首次计算执行日(yyyymmdd)'
+            enum_values: ''
+          - name: payroll_cycle_type
+            type: int
+            required: true
+            note: '结算周期类型(1:按月,2:按日)'
+            enum_values: ''
+          - name: cycle_interval
+            type: int
+            required: true
+            note: '结算周期值（天/月）'
+            enum_values: ''
+          - name: compute_delay_days
+            type: int
+            required: true
+            note: '计算预留后延天数'
+            enum_values: ''
+          - name: adjustment_flag
+            type: bool
+            required: true
+            note: '扣补款标示(true:有款型，false:无款项)'
+            enum_values: ''
+        result: {}
+        param_example:
+          platform_code: 'elem'
+          city_code: 'beijing'
+          supplier_id: '5a655eaace6d2a430f748f82'
+          work_type: 3001
+          init_execute_date: 20181010
+          payroll_cycle_type: 1
+          cycle_interval: 2
+          compute_delay_days: 6
+          adjustment_flag: true
+        result_example:
+          ok: true
+          _id: 5a655eaace6d2a430f748f82
+          platform_code: 'elem'
+          city_code: 'beijing'
+          supplier_id: '5a655eaace6d2a430f748f82'
+          work_type: 3001
+          init_execute_date: 20181010
+          payroll_cycle_type: 1
+          cycle_interval: 2
+          compute_delay_days: 6
+          adjustment_flag: true

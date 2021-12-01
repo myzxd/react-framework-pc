@@ -1,0 +1,248 @@
+/* code - 审批单 - 流转记录 - 同意操作 - popover */
+.code-order-approve-consent-popover {
+  display: flex;
+  flex-direction: column;
+}
+
+/* code - 审批单 - 流转记录 - 同意操作 - popover - button */
+.code-order-approve-consent-popover > Button {
+  margin-bottom: 10px;
+}
+
+/* code - 审批单 - 流转记录 - 查看更多操作 */
+.code-order-circulation-node-operate {
+  cursor: pointer;
+  color: #F5A623;
+  display: block;
+  height: 30px;
+  line-height: 30px;
+  margin-left: 10px;
+}
+
+/* code - 审批单 - 流转记录 - 节点icon */
+.code-order-circulation-node-icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* code - 审批单 - 流转记录 - 节点名称 */
+.code-order-circulation-node-name {
+  font-size: 12px;
+  color: #bababa;
+  border-bottom: 1px solid #e4e4e4;
+}
+
+/* code - 审批单 - 流转记录 - 记录 - 审批人name */
+.code-order-circulation-rec-approve-name {
+  color: #323232;
+  font-size: 14px;
+  height: 40px;
+  line-height: 40px;
+}
+
+/* code - 审批单 - 流转记录 - 记录 - 操作时间 */
+.code-circulation-rec-info {
+  height: 40px;
+  line-height: 40px;
+  text-align: center;
+}
+
+/* code - 审批单 - 流转记录 - 记录 - 补充意见 - 查看操作 */
+.code-circulation-supplement-show-more-btn {
+  cursor: pointer;
+  color: #F5A623;
+  display: block;
+  height: 30px;
+  line-height: 30px;
+  margin-left: 10px;
+}
+
+/* code - 审批单 - 流转记录 - 记录 - 补充意见 */
+.code-circulation-supplement-item {
+  margin-left: 10px;
+  padding: 20px 0;
+  border-bottom: 1px solid #e2e2e2;
+}
+
+/* code - 审批单 - 流转记录 - 记录 - 补充意见 - 创建人name */
+.code-circulation-supplement-creator-name {
+  color: #323232;
+  font-size: 14px;
+}
+
+/* code - 审批单 - 流转记录 - 记录 - 补充意见 - 创建时间 */
+.code-circulation-supplement-create-at {
+  float: right;
+  margin-right: 10px;
+}
+
+/* code - 审批单 - 流转记录 - 记录 - 补充意见 - 内容 - wrap */
+.code-circulation-supplement-text-wrap {
+  margin-left: 12px;
+  margin-right: 12px;
+}
+
+/* code - 审批单 - 流转记录 - 记录 - 补充意见 - 内容 */
+.code-circulation-supplement-text {
+  color: #000;
+  opacity: .6;
+  word-wrap: break-word;
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
+/* code - 审批单 - 流转记录 - 记录 - 补充意见 - 附件 */
+.code-circulation-supplement-files {
+  word-wrap: break-word;
+}
+
+/* code - 审批单 - 流转记录 - 记录 - 补充意见 - 附件item */
+.code-circulation-supplement-file-item {
+  display: block;
+  margin-bottom: 5px;
+}
+
+/* code - 审批单 - 流转记录 - 记录 - 补充意见 - 附件删除操作 */
+.code-circulation-supplement-del-icon {
+  color: red;
+  cursor: pointer;
+  display: inlineBlock;
+  float: right;
+  margin-right: 10px;
+}
+
+/* code - 审批单 - 流转记录 - 记录 - 补充意见 - title */
+.code-circulation-supplement-title {
+  width: 70px;
+  height: 20px;
+  background-color: #F4F4F4;
+  border-top-right-radius: 25px;
+  line-height: 20PX;
+  text-align: center;
+  color: #333;
+}
+
+/* code - 审批单 - 流转记录 - 记录 - 补充意见 - content */
+.code-circulation-supplement-content {
+  background-color: #F4F4F4;
+}
+
+/* code - 审批单 - 流转记录 - 审批操作 */
+.code-circulation-approve-operation {
+  margin: 10px 10px 0;
+  border-radius: 4px;
+  border: 1px solid #D9D9D9;
+}
+
+/* code - 审批单 - 流转记录 - 付款操作 */
+.code-circulation-pay-operation {
+  margin: 0 10px;
+  border-radius: 4px;
+  border: 1px solid #D9D9D9;
+}
+
+/* code - 审批单 - 流转记录 - 补充意见 - wrap */
+.code-circulation-extra-wrap {
+  margin-top: 10px;
+}
+
+.card-title {
+  font-size: 16px;
+  font-weight: bold;
+  text-align: center;
+  margin: 15px 0;
+}
+
+.card-box {
+  border-top: 1px dashed #ccc;
+  margin-top: 10px;
+}
+.card-box-team {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 83px;
+  height: 50px;
+  line-height: 50px;
+  color: #9254DE;
+  text-align: center;
+  font-weight: 500;
+  font-size: 20px;
+  background: rgba(146, 84, 222, 0.1);;
+  border-radius: 0px 0px 30px 0px;
+}
+
+.card-box-code {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 83px;
+  height: 50px;
+  line-height: 50px;
+  color: #1890FF;
+  text-align: center;
+  font-weight: 500;
+  font-size: 20px;
+  background: rgba(24, 144, 255, 0.1);;
+  border-radius: 0px 0px 30px 0px;
+}
+
+/* code - 审批单 - 费用单 - panel - header */
+.code-order-cost-header {
+  color: rgba(0, 0, 0, 0.85);
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* code - 审批单 - 费用单 - panel - header - 税金 */
+.code-order-cost-header-money-text {
+  color: #666666;
+  font-weight: 400;
+  margin-right: 4px;
+  font-size: 12px;
+}
+
+/* code - 审批单 - 费用单 - panel - header - 税金 */
+.code-order-cost-header-tax {
+  margin-right: 10px;
+}
+
+/* code - 审批单 - 费用单 - footer */
+.code-order-cost-footer {
+  text-align: right;
+  color: rgba(0, 0, 0, 0.85);
+  font-size: 14px;
+  font-weight: 600;
+  margin: 10px 15px 0 0;
+}
+
+/* code - 审批单 - 流转记录 - 付款操作 - row */
+.code-circulation-pay-row {
+  background-color: #FFF6EE;
+  height: 50px;
+  line-height: 50px;
+  margin-bottom: 10px;
+  border-radius: 2px;
+}
+
+/* code - 审批单 - 流转记录 - 付款操作 - title */
+.code-circulation-pay-title {
+  padding-left: 10px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* code - 审批单 - 费用单 - panel - header - 修改金额 - modal */
+.code-order-cost-header-money-modal {
+  color: rgba(0, 0, 0, 0.85);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/**/
+.code-order-cost-tooltip-title{
+  color:red;
+  padding-right: 5px;
+}

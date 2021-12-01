@@ -1,0 +1,1932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: models/employee/manage.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: models/employee/manage.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * 员工管理相关model
+ * @module model/employee/manage
+ */
+import is from 'is_js';
+import { message } from 'antd';
+
+import {
+  fetchEmployees,
+  exportEmployees,
+  fetchEmployeeDetail,
+  createEmployee,
+  updateEmployee,
+  employeeRelease,
+  fetchEmployeeHistoryDetail,
+} from '../../services/employee';
+import {
+  uploadFileToQiNiu,
+  getUploadToken,
+  fetchFileURL,
+} from '../../services/upload';
+
+import { authorize } from '../../application';
+import {
+  DutyState,
+  AccountRecruitmentChannel,
+  FileType,
+  PaperworkType,
+  SignContractType,
+} from '../../application/define';
+import { RequestMeta, ResponseMeta } from '../../application/object';
+import Modules from '../../application/define/modules';
+
+export default {
+  /**
+   * 命名空间
+   * @default
+   */
+  namespace: 'employeeManage',
+   /**
+   * 状态树
+   * @prop {object} employees 员工列表信息
+   * @prop {object} employeeDetail 员工详情信息
+   * @prop {object} employeeHistoryDetail 员工历史工作信息
+   */
+  state: {
+    fileType: '',               // 员工页面类型
+    employeesFirst: {},         // 一线员工列表信息
+    employeesSecond: {},        // 二线员工列表信息
+    employees: {},              // 员工列表信息
+    employeeDetail: {},         // 员工详情信息
+    employeeHistoryDetail: {},  // 员工历史工作信息
+  },
+  /**
+   * @namespace employee/manage/effects
+   */
+  effects: {
+    /**
+     * 获取员工列表
+     * @param {number}  state 状态
+     * @param {string}  name  姓名
+     * @param {string}  phone  手机号
+     * @param {string}  identityCardId  身份证号
+     * @param {string}  customId  第三方平台账户id
+     * @param {string}  associatedIdentityCardId  第三方平台身份证号
+     * @param {string}  workType   个户类型
+     * @param {string}  contractBelongId  合同归属
+     * @param {string}  recruitmentChannelId  推荐渠道
+     * @param {array}   referrerCompanyId  推荐公司
+     * @param {array}   suppliers  供应商
+     * @param {array}   platforms  平台
+     * @param {array}   cities     城市
+     * @param {array}   districts  商圈
+     * @param {string}  healthCertificateDay  健康证到期天数
+     * @memberof module:model/employee/manage~employee/manage/effects
+     */
+    *fetchEmployees({ payload }, { call, put }) {
+      // 公共文本参数
+      const {
+        page,
+        limit,
+        name,                        // 姓名
+        phone,                       // 手机号
+        identityCardId,              // 身份证号
+        state,                       // 签约状态
+        signType,                    // 签约类型
+        recruitmentChannelId,        // 推荐渠道
+        referrerCompanyId,           // 推荐公司
+        contractFirstPartyInfo,      // 合同甲方
+        fileType,                    // 员工页面类型
+        onSuccessCallback,           // 请求成功回调
+      } = payload;
+
+      // 一线/个户 、 二线/个户公共文本参数
+      const {
+        platforms,                   // 平台
+        suppliers,                   // 供应商
+        cities,                      // 城市
+        districts,                   // 商圈
+        personalCompanyNo,           // 个户编号
+        companyNo,                   // 个独编号
+      } = payload;
+      // 一线/个户
+      const {
+        personalCompanyType,         // 个户类型
+        customId,                    // 第三方平台账户ID
+        healthCertificateDay,        // 健康证到期天数
+      } = payload;
+      // 二线/个户
+      const {
+        office,                      // 职能
+      } = payload;
+      // 员工
+      /* const {
+        currentUnit,                 // 所在单位
+        department,                  // 部门
+        post,                        // 岗位
+      } = payload; */
+
+      // 默认参数
+      const params = {
+        profile_type: FileType[fileType],
+        permission_id: Modules.OperateSystemAccountManageVerifyEmployee.id,
+        account_id: authorize.account.id,
+        _meta: RequestMeta.mapper({ page: page || 1, limit: limit || 30 }),
+      };
+
+      // 姓名
+      if (is.existy(name) &amp;&amp; is.not.empty(name)) {
+        params.name = name;
+      }
+      // 手机号
+      if (is.existy(phone) &amp;&amp; is.not.empty(phone)) {
+        params.phone = phone;
+      }
+      // 身份证号
+      if (is.existy(identityCardId) &amp;&amp; is.not.empty(identityCardId)) {
+        params.identity_card_id = identityCardId;
+      }
+      // 签约状态
+      if (is.existy(state) &amp;&amp; is.not.empty(state) &amp;&amp; is.array(state)) {
+        params.state = state.map(item => Number(item));
+      }
+      // 签约类型
+      if (is.existy(signType) &amp;&amp; is.not.empty(signType)) {
+        params.sign_type = signType;
+      }
+      // 推荐渠道
+      if (is.existy(recruitmentChannelId) &amp;&amp; is.not.empty(recruitmentChannelId)) {
+        params.recruitment_channel_id = Number(recruitmentChannelId);
+      }
+      // 推荐公司
+      if (is.existy(referrerCompanyId) &amp;&amp; is.not.empty(referrerCompanyId)) {
+        params.referrer_company_id = referrerCompanyId;
+      }
+      // 合同甲方
+      if (is.existy(contractFirstPartyInfo) &amp;&amp; is.not.empty(contractFirstPartyInfo)) {
+        params.contract_belong_id = contractFirstPartyInfo;
+      }
+      // 平台
+      if (is.existy(platforms) &amp;&amp; is.not.empty(platforms) &amp;&amp; is.array(platforms)) {
+        params.platform_list = platforms;
+      }
+      // 供应商
+      if (is.existy(suppliers) &amp;&amp; is.not.empty(suppliers) &amp;&amp; is.array(suppliers)) {
+        params.supplier_list = suppliers;
+      }
+      // 城市
+      if (is.existy(cities) &amp;&amp; is.not.empty(cities)) {
+        if (is.array(cities)) {
+          params.city_spelling_list = cities;
+        }
+        if (is.string(cities)) {
+          params.city_spelling_list = [cities];
+        }
+      }
+      // 商圈
+      if (is.existy(districts) &amp;&amp; is.not.empty(districts)) {
+        if (is.array(districts)) {
+          params.biz_district_list = districts;
+        }
+        if (is.string(districts)) {
+          params.biz_district_list = [districts];
+        }
+      }
+      // 个户类型
+      if (is.existy(personalCompanyType) &amp;&amp; is.not.empty(personalCompanyType)) {
+        params.individual_type = personalCompanyType;
+      }
+      // 第三方平台账户id
+      if (is.existy(customId) &amp;&amp; is.not.empty(customId)) {
+        params.custom_id = customId;
+      }
+      // 健康证到期天数
+      if (is.existy(healthCertificateDay) &amp;&amp; is.not.empty(healthCertificateDay)) {
+        params.health_certificate_days = Number(healthCertificateDay);
+      }
+      // 个户编号
+      if (is.existy(personalCompanyNo) &amp;&amp; is.not.empty(personalCompanyNo)) {
+        params.personal_company_no = personalCompanyNo;
+      }
+      // 个独编号
+      if (is.existy(companyNo) &amp;&amp; is.not.empty(companyNo)) {
+        params.company_no = companyNo;
+      }
+      // 职能
+      if (is.existy(office) &amp;&amp; is.not.empty(office)) {
+        params.office = office;
+      }
+      /* // 所在单位
+      if (is.existy(currentUnit) &amp;&amp; is.not.empty(currentUnit)) {
+        params.current_unit = currentUnit;
+      }
+      // 部门
+      if (is.existy(department) &amp;&amp; is.not.empty(department)) {
+        params.current_unit = department;
+      }
+      // 岗位
+      if (is.existy(post) &amp;&amp; is.not.empty(post)) {
+        params.current_unit = post;
+      } */
+
+      // 请求服务器
+      const result = yield call(fetchEmployees, params);
+
+      // 判断数据是否为空
+      if (is.existy(result.data)) {
+        if (onSuccessCallback) {
+          onSuccessCallback(result.data);
+        }
+
+        if (fileType === 'first') {
+          yield put({ type: 'reduceEmployeesFirst', payload: result });
+        } else if (fileType === 'second') {
+          yield put({ type: 'reduceEmployeesSecond', payload: result });
+        } else {
+          yield put({ type: 'reduceEmployees', payload: result });
+        }
+      }
+    },
+    /**
+     * 创建员工
+     * @param {number}  fileType                档案类型
+     * @param {number}  industryType            所属场景
+     * @param {string}  householdNumber         个户编号
+     * @param {string}  unityNumber             个独编号
+     * @param {string}  unityName               个独名称
+     * @param {number}  householdType           个户类型
+     * @param {string}  post                    职能
+     * @param {string}  employeeId              员工编号
+     * @param {string}  platformCode            平台
+     * @param {string}   supplierIds            供应商
+     * @param {string}   cityCodes              城市
+     * @param {array}   districts               商圈
+     * @param {number}   signType               签约类型
+     * @param {string}  entryDate               合作日期
+     * @param {string}  signedDate              合同生效日期
+     * @param {string}  contractBelong          合同甲方
+     * @param {string}  signCycle               签约周期数
+     * @param {number}  timeCycle               签约周期单位
+     * @param {number}  contractType            合同类型
+     * @param {string}  contractNumber          合同编号
+     * @param {string}  formalDate              转正日期
+     * @param {object}  contractPhotos          合同照片
+     * @param {number}  idPaperworkType         证件类型（身份证件）
+     * @param {string}  idPaperworkNumber       证件号码（身份证件）
+     * @param {string}  platformIdCard          平台身份证号（身份证件）
+     * @param {string}  customId                第三方平台ID（身份证件）
+     * @param {object}  idFrontPhotos           证件正面照（身份证件）
+     * @param {object}  idObversePhotos         证件反面照（身份证件）
+     * @param {object}  idClosePhotos           手持证件半身照（身份证件）
+     * @param {number}  healthPaperworkType     证件类型（健康证件）
+     * @param {string}  healthPaperworkNumber   证件号码（健康证件）
+     * @param {object}  healthFrontPhotos       证件正面照（健康证件）
+     * @param {object}  healthObversePhotos     证件反面照（健康证件）
+     * @param {object}  healthClosePhotos       手持证件半身照（健康证件）
+     * @param {number}  drivePaperworkType      证件类型（驾驶证件）
+     * @param {string}  drivePaperworkNumber    证件号码（驾驶证件）
+     * @param {object}  driveFrontPhotos        证件正面照（驾驶证件）
+     * @param {object}  driveObversePhotos      证件反面照（驾驶证件）
+     * @param {object}  driveClosePhotos        手持证件半身照（驾驶证件）
+     * @param {number}  recruitmentChannel      推荐渠道
+     * @param {string}  referrerCompany         推荐公司
+     * @param {string}  staffIdentityCard       推荐人身份证
+     * @param {string}  staffIdentityName       推荐人姓名
+     * @param {string}  staffIdentityPhone      推荐人手机号
+     * @param {number}  referrerPlatform        推荐平台
+     * @param {string}  name                    姓名
+     * @param {number}  gender                  性别
+     * @param {string}  birthday                出生日期
+     * @param {string}  age                     年龄
+     * @param {string}  national                民族
+     * @param {number}  politicalStatus         政治面貌
+     * @param {number}  maritalStatus           婚姻状况
+     * @param {string}  birthplace              籍贯
+     * @param {string}  accountLocation         户口所在地
+     * @param {string}  oftenAddress            常居地
+     * @param {string}  phone                   手机号
+     * @param {string}  fixedTelephone          固定电话
+     * @param {string}  email                   邮箱
+     * @param {string}  education               学历
+     * @param {string}  emergencyContact        紧急联系人
+     * @param {string}  emergencyContactPhone   紧急联系人电话
+     * @param {number}  height                  身高
+     * @param {number}  weight                  体重
+     * @param {string}  constellation           星座
+     * @param {string}  hobby                   兴趣爱好
+     * @param {string}  specialty               特长
+     * @param {number}  highestEducation        最高学历
+     * @param {string}  jobTitle                专业职称
+     * @param {string}  foreignLanguage         外语及等级
+     * @param {object}  degreeCertificatePhotos 学位证照片
+     * @param {array}  learnExperience          学习经历
+     * @param {array}  workExperience           工作经历
+     * @memberof module:model/employee/manage~employee/manage/effects
+     */
+    *createEmployee({ payload }, { call }) {
+      const {
+        fileType,                // 档案类型
+        industryType,            // 所属场景
+        householdNumber,         // 个户编号
+        unityNumber,             // 个独编号
+        unityName,               // 个独名称
+        householdType,           // 个户类型
+        post,                    // 职能
+        employeeId,              // 员工编号
+        platformCode,            // 平台
+        supplierIds,             // 供应商
+        cityCodes,               // 城市
+        districts,               // 商圈
+        signType,                // 签约类型
+        entryDate,               // 合作日期
+        signedDate,              // 合同生效日期
+        contractBelong,          // 合同甲方
+        signCycle,               // 签约周期数
+        timeCycle,               // 签约周期单位
+        contractType,            // 合同类型
+        contractNumber,          // 合同编号
+        formalDate,              // 转正日期
+        contractPhotos,          // 合同照片
+        idPaperworkType,         // 证件类型（身份证件）
+        idPaperworkNumber,       // 证件号码（身份证件）
+        platformIdCard,          // 平台身份证号（身份证件）
+        customId,                // 第三方平台ID（身份证件）
+        idFrontPhotos,           // 证件正面照（身份证件）
+        idObversePhotos,         // 证件反面照（身份证件）
+        idClosePhotos,           // 手持证件半身照（身份证件）
+        healthPaperworkType,     // 证件类型（健康证件）
+        healthPaperworkNumber,   // 证件号码（健康证件）
+        healthFrontPhotos = { keys: [] },       // 证件正面照（健康证件）
+        healthObversePhotos = { keys: [] },     // 证件反面照（健康证件）
+        healthClosePhotos,       // 手持证件半身照（健康证件）
+        drivePaperworkType,      // 证件类型（驾驶证件）
+        drivePaperworkNumber,    // 证件号码（驾驶证件）
+        driveFrontPhotos = { keys: [] },        // 证件正面照（驾驶证件）
+        driveObversePhotos = { keys: [] },      // 证件反面照（驾驶证件）
+        driveClosePhotos,        // 手持证件半身照（驾驶证件）
+        recruitmentChannel,      // 推荐渠道
+        referrerCompany,         // 推荐公司
+        staffIdentityCard,       // 推荐人身份证
+        staffIdentityName,       // 推荐人姓名
+        staffIdentityPhone,      // 推荐人手机号
+        referrerPlatform,        // 推荐平台
+        name,                    // 姓名
+        gender,                  // 性别
+        birthday,                // 出生日期
+        age,                     // 年龄
+        national,                // 民族
+        politicalStatus,         // 政治面貌
+        maritalStatus,           // 婚姻状况
+        birthplace,              // 籍贯
+        accountLocation,         // 户口所在地
+        oftenAddress,            // 常居地
+        phone,                   // 手机号
+        fixedTelephone,          // 固定电话
+        email,                   // 邮箱
+        education,               // 学历
+        emergencyContact,        // 紧急联系人
+        emergencyContactPhone,   // 紧急联系人电话
+        height,                  // 身高
+        weight,                  // 体重
+        constellation,           // 星座
+        hobby,                   // 兴趣爱好
+        specialty,               // 特长
+        highestEducation,        // 最高学历
+        jobTitle,                // 专业职称
+        foreignLanguage,         // 外语及等级
+        degreeCertificatePhotos, // 学位证照片
+        learnExperience,         // 学习经历
+        workExperience,          // 工作经历
+        onSuccessCallback,       // 请求回调
+      } = payload;
+      // 档案类型
+      if (is.not.existy(fileType) || is.empty(fileType)) {
+        if (onSuccessCallback) {
+          onSuccessCallback();
+        }
+        return message.error('操作失败，档案类型不能为空');
+      }
+      // 所属场景
+      if (`${fileType}` !== `${FileType.staff}` &amp;&amp; (is.not.existy(industryType) || is.empty(industryType))) {
+        if (onSuccessCallback) {
+          onSuccessCallback();
+        }
+        return message.error('操作失败，所属场景不能为空');
+      }
+      // 个户类型
+      if (`${fileType}` === `${FileType.first}` &amp;&amp; (is.not.existy(householdType) || is.empty(householdType))) {
+        if (onSuccessCallback) {
+          onSuccessCallback();
+        }
+        return message.error('操作失败，个户类型不能为空');
+      }
+      // 平台
+      if (`${fileType}` !== `${FileType.staff}` &amp;&amp; (is.not.existy(platformCode) || is.empty(platformCode))) {
+        if (onSuccessCallback) {
+          onSuccessCallback();
+        }
+        return message.error('操作失败，所属平台不能为空');
+      }
+      // 主体（供应商）
+      if (`${fileType}` !== `${FileType.staff}` &amp;&amp; (is.not.existy(supplierIds) || is.empty(supplierIds))) {
+        if (onSuccessCallback) {
+          onSuccessCallback();
+        }
+        return message.error('操作失败，所属主体不能为空');
+      }
+      // 城市
+      if (`${fileType}` !== `${FileType.staff}` &amp;&amp; (is.not.existy(cityCodes) || is.empty(cityCodes))) {
+        if (onSuccessCallback) {
+          onSuccessCallback();
+        }
+        return message.error('操作失败，所属城市不能为空');
+      }
+      // 商圈
+      if (`${fileType}` !== `${FileType.staff}` &amp;&amp; (is.not.existy(districts) || is.empty(districts))) {
+        if (onSuccessCallback) {
+          onSuccessCallback();
+        }
+        return message.error('操作失败，所属商圈不能为空');
+      }
+      // 签约类型
+      if (is.not.existy(signType) || is.empty(signType)) {
+        if (onSuccessCallback) {
+          onSuccessCallback();
+        }
+        return message.error('操作失败，签约类型不能为空');
+      }
+      // 合作日期
+      if (is.not.existy(entryDate) || is.empty(entryDate)) {
+        if (onSuccessCallback) {
+          onSuccessCallback();
+        }
+        return message.error('操作失败，合作日期不能为空');
+      }
+      // 合同生效日期
+      if (is.not.existy(signedDate) || is.empty(signedDate)) {
+        if (onSuccessCallback) {
+          onSuccessCallback();
+        }
+        return message.error('操作失败，合同生效日期不能为空');
+      }
+      // 合同甲方
+      if (is.not.existy(contractBelong) || is.empty(contractBelong)) {
+        if (onSuccessCallback) {
+          onSuccessCallback();
+        }
+        return message.error('操作失败，合同甲方不能为空');
+      }
+      // 签约周期数
+      if (is.not.existy(signCycle) || is.empty(signCycle)) {
+        if (onSuccessCallback) {
+          onSuccessCallback();
+        }
+        return message.error('操作失败，签约周期数不能为空');
+      }
+      // 签约周期单位
+      if (is.not.existy(timeCycle) || is.empty(timeCycle)) {
+        if (onSuccessCallback) {
+          onSuccessCallback();
+        }
+        return message.error('操作失败，签约周期单位不能为空');
+      }
+      // 合同类型
+      if (is.not.existy(contractType) || is.empty(contractType)) {
+        if (onSuccessCallback) {
+          onSuccessCallback();
+        }
+        return message.error('操作失败，合同类型不能为空');
+      }
+      // 证件类型（身份证件）
+      if (is.not.existy(idPaperworkType) || is.empty(idPaperworkType)) {
+        if (onSuccessCallback) {
+          onSuccessCallback();
+        }
+        return message.error('操作失败，证件类型（身份证件）不能为空');
+      }
+      // 证件号码（身份证件）
+      if (is.not.existy(idPaperworkNumber) || is.empty(idPaperworkNumber)) {
+        if (onSuccessCallback) {
+          onSuccessCallback();
+        }
+        return message.error('操作失败，证件号码（身份证件）不能为空');
+      }
+      // 平台身份证号（身份证件）
+      if (`${fileType}` === `${FileType.first}` &amp;&amp; (is.not.existy(platformIdCard) || is.empty(platformIdCard))) {
+        if (onSuccessCallback) {
+          onSuccessCallback();
+        }
+        return message.error('操作失败，平台身份证号（身份证件）不能为空');
+      }
+      // 第三方平台ID（身份证件）
+      if (`${fileType}` === `${FileType.first}` &amp;&amp; (is.not.existy(customId) || is.empty(customId))) {
+        if (onSuccessCallback) {
+          onSuccessCallback();
+        }
+        return message.error('操作失败，第三方平台ID（身份证件）不能为空');
+      }
+      // 推荐渠道
+      if (is.not.existy(recruitmentChannel) || is.empty(recruitmentChannel)) {
+        if (onSuccessCallback) {
+          onSuccessCallback();
+        }
+        return message.error('操作失败，推荐渠道不能为空');
+      }
+      // 推荐公司
+      if (`${AccountRecruitmentChannel}` === `${AccountRecruitmentChannel.third}` &amp;&amp; (is.not.existy(referrerCompany) || is.empty(referrerCompany))) {
+        if (onSuccessCallback) {
+          onSuccessCallback();
+        }
+        return message.error('操作失败，推荐公司不能为空');
+      }
+      // 推荐平台
+      if (`${AccountRecruitmentChannel}` === `${AccountRecruitmentChannel.thirdPlatform}` &amp;&amp; (is.not.existy(referrerPlatform) || is.empty(referrerPlatform))) {
+        if (onSuccessCallback) {
+          onSuccessCallback();
+        }
+        return message.error('操作失败，推荐公司不能为空');
+      }
+      // 推荐人身份证
+      if (`${AccountRecruitmentChannel}` === `${AccountRecruitmentChannel.recommend}` &amp;&amp; (is.not.existy(staffIdentityCard) || is.empty(staffIdentityCard))) {
+        if (onSuccessCallback) {
+          onSuccessCallback();
+        }
+        return message.error('操作失败，推荐人身份证不能为空');
+      }
+      // 姓名
+      if (is.not.existy(name) || is.empty(name)) {
+        if (onSuccessCallback) {
+          onSuccessCallback();
+        }
+        return message.error('操作失败，姓名不能为空');
+      }
+      // 性别
+      if (is.not.existy(gender) || is.empty(gender)) {
+        if (onSuccessCallback) {
+          onSuccessCallback();
+        }
+        return message.error('操作失败，性别不能为空');
+      }
+      // 出生日期
+      // if (`${signType}` === `${SignContractType.paper}` &amp;&amp; (is.not.existy(birthday) || is.empty(birthday))) {
+      //   return message.error('操作失败，出生日期不能为空');
+      // }
+      // 民族
+      if (is.not.existy(national) || is.empty(national)) {
+        if (onSuccessCallback) {
+          onSuccessCallback();
+        }
+        return message.error('操作失败，民族不能为空');
+      }
+      // 籍贯
+      if (is.not.existy(birthplace) || is.empty(birthplace)) {
+        if (onSuccessCallback) {
+          onSuccessCallback();
+        }
+        return message.error('操作失败，籍贯不能为空');
+      }
+      // 学历
+      if (is.not.existy(education) || is.empty(education)) {
+        if (onSuccessCallback) {
+          onSuccessCallback();
+        }
+        return message.error('操作失败，学历不能为空');
+      }
+      // 常居地
+      if (is.not.existy(oftenAddress) || is.empty(oftenAddress)) {
+        if (onSuccessCallback) {
+          onSuccessCallback();
+        }
+        return message.error('操作失败，常居地不能为空');
+      }
+      // 手机号
+      if (is.not.existy(phone) || is.empty(phone)) {
+        if (onSuccessCallback) {
+          onSuccessCallback();
+        }
+        return message.error('操作失败，手机号不能为空');
+      }
+      // 紧急联系人电话
+      if (is.not.existy(emergencyContactPhone) || is.empty(emergencyContactPhone)) {
+        if (onSuccessCallback) {
+          onSuccessCallback();
+        }
+        return message.error('操作失败，紧急联系人电话不能为空');
+      }
+      // 合同生效日期必须等于或晚于合作日期
+      if (entryDate &amp;&amp; entryDate.isAfter(signedDate)) {
+        if (onSuccessCallback) {
+          onSuccessCallback();
+        }
+        return message.error('合同生效日期必须等于或晚于合作日期', 5);
+      }
+      // 转正日期必须晚于合作日期
+      if (formalDate &amp;&amp; (formalDate.isBefore(entryDate) || formalDate.isSame(entryDate, 'day'))) {
+        if (onSuccessCallback) {
+          onSuccessCallback();
+        }
+        return message.error('转正日期必须晚于合作日期', 5);
+      }
+      if ((healthFrontPhotos.keys[0] &amp;&amp; !healthObversePhotos.keys[0])
+      || (!healthFrontPhotos.keys[0] &amp;&amp; healthObversePhotos.keys[0])) {
+        if (onSuccessCallback) {
+          onSuccessCallback();
+        }
+        return message.error('健康证件类型下的证件正反面均不能为空', 5);
+      }
+      if ((driveFrontPhotos.keys[0] &amp;&amp; !driveObversePhotos.keys[0])
+      || (!driveFrontPhotos.keys[0] &amp;&amp; driveObversePhotos.keys[0])) {
+        if (onSuccessCallback) {
+          onSuccessCallback();
+        }
+        return message.error('驾驶证件类型下的证件正反面均不能为空', 5);
+      }
+      // 纸质签约需上传合同照片
+      if (`${signType}` === `${SignContractType.paper}`
+      &amp;&amp; (is.not.existy(contractPhotos) || is.empty(contractPhotos) || is.not.existy(contractPhotos.keys) || is.empty(contractPhotos.keys))) {
+        if (onSuccessCallback) {
+          onSuccessCallback();
+        }
+        return message.error('合同照片未上传', 5);
+      }
+      // 纸质签约需上传身份证正面照
+      if (`${signType}` === `${SignContractType.paper}`
+      &amp;&amp; (is.not.existy(idFrontPhotos) || is.empty(idFrontPhotos) || is.not.existy(idFrontPhotos.keys) || is.empty(idFrontPhotos.keys))) {
+        if (onSuccessCallback) {
+          onSuccessCallback();
+        }
+        return message.error('身份证件正面照未上传', 5);
+      }
+      // 纸质签约需上传身份证反面照
+      if (`${signType}` === `${SignContractType.paper}`
+      &amp;&amp; (is.not.existy(idObversePhotos) || is.empty(idObversePhotos) || is.not.existy(idObversePhotos.keys) || is.empty(idObversePhotos.keys))) {
+        if (onSuccessCallback) {
+          onSuccessCallback();
+        }
+        return message.error('身份证件反面照未上传', 5);
+      }
+      const params = {
+        profile_type: Number(fileType),                     // 档案类型
+        platform_list: [platformCode],                      // 平台
+        supplier_list: [supplierIds],                       // 供应商
+        city_spelling_list: [cityCodes],                    // 城市
+        biz_district_list: Array.isArray(districts) ? districts : [districts], // 商圈
+        sign_type: Number(signType),                        // 签约类型
+        entry_date: entryDate ? Number(entryDate.format('YYYYMMDD')) : '',    // 合作日期
+        signed_date: signedDate ? Number(signedDate.format('YYYYMMDD')) : '', // 合同生效日期
+        contract_belong_id: contractBelong,                 // 合同甲方ID
+        sign_cycle: Number(signCycle),                      // 签约周期数
+        sign_cycle_unit: Number(timeCycle),                 // 签约周期单位
+        contract_type: Number(contractType),                // 合同类型
+        identity_certificate_type: Number(idPaperworkType), // 身份证件类型
+        identity_card_id: idPaperworkNumber,                // 身份证号
+        health_certificate_type: PaperworkType.health,      // 健康证证件类型
+        drive_certificate_type: PaperworkType.drive,        // 驾驶证证件类型
+        recruitment_channel_id: Number(recruitmentChannel), // 推荐渠道
+        name,                                               // 姓名
+        gender_id: Number(gender),                          // 性别
+        age,                                                // 年龄
+        national,                                           // 名族
+        birth_place: birthplace,                            // 籍贯
+        education,                                          // 学历
+        often_address: oftenAddress,                        // 常居地
+        phone,                                              // 手机号
+        emergency_contact_phone: emergencyContactPhone,     // 紧急联系人电话
+      };
+      // 所属场景
+      if (is.existy(industryType) &amp;&amp; is.not.empty(industryType)) {
+        params.industry_code = Number(industryType);
+      }
+      // 个户类型
+      if (is.existy(householdType) &amp;&amp; is.not.empty(householdType)) {
+        params.individual_type = Number(householdType);
+      }
+      // 职能
+      if (is.existy(post) &amp;&amp; is.not.empty(post)) {
+        params.office = post;
+      }
+      // 个户编号
+      if (is.existy(householdNumber) &amp;&amp; is.not.empty(householdNumber)) {
+        params.personal_company_no = householdNumber;
+      }
+      // 个独编号
+      if (is.existy(unityNumber) &amp;&amp; is.not.empty(unityNumber)) {
+        params.company_no = unityNumber;
+      }
+      // 个独名称
+      if (is.existy(unityName) &amp;&amp; is.not.empty(unityName)) {
+        params.company_name = unityName;
+      }
+      // 员工编号
+      if (is.existy(employeeId) &amp;&amp; is.not.empty(employeeId)) {
+        params.staff_no = employeeId;
+      }
+      // 合同编号
+      if (is.existy(contractNumber) &amp;&amp; is.not.empty(contractNumber)) {
+        params.contract_no = contractNumber;
+      }
+      // 转正日期
+      if (is.existy(formalDate) &amp;&amp; is.not.empty(formalDate)) {
+        params.regular_date = formalDate ? Number(formalDate.format('YYYYMMDD')) : '';
+      }
+      // 平台身份证号（身份证件）
+      if (is.existy(platformIdCard) &amp;&amp; is.not.empty(platformIdCard)) {
+        params.associated_identity_card_id = platformIdCard;
+      }
+      // 第三方平台ID（身份证件））
+      if (is.existy(customId) &amp;&amp; is.not.empty(customId)) {
+        params.custom_id = customId;
+      }
+      // 合同照片
+      if (is.existy(contractPhotos) &amp;&amp; is.not.empty(contractPhotos)
+        &amp;&amp; is.existy(contractPhotos.keys) &amp;&amp; is.not.empty(contractPhotos.keys)) {
+        params.contract_photo_list = contractPhotos.keys;
+      }
+      // 证件正面照（身份证件）
+      if (is.existy(idFrontPhotos) &amp;&amp; is.not.empty(idFrontPhotos)
+        &amp;&amp; is.existy(idFrontPhotos.keys) &amp;&amp; is.not.empty(idFrontPhotos.keys)) {
+        params.identity_card_front = idFrontPhotos.keys[0];
+      }
+      // 证件反面照（身份证件）
+      if (is.existy(idObversePhotos) &amp;&amp; is.not.empty(idObversePhotos)
+        &amp;&amp; is.existy(idObversePhotos.keys) &amp;&amp; is.not.empty(idObversePhotos.keys)) {
+        params.identity_card_back = idObversePhotos.keys[0];
+      }
+      // 手持证件半身照（身份证件）
+      if (is.existy(idClosePhotos) &amp;&amp; is.not.empty(idClosePhotos)
+        &amp;&amp; is.existy(idClosePhotos.keys) &amp;&amp; is.not.empty(idClosePhotos.keys)) {
+        params.identity_card_in_hand = idClosePhotos.keys[0];
+      }
+      // 员工编号
+      if (is.existy(employeeId) &amp;&amp; is.not.empty(employeeId)) {
+        params.staff_no = employeeId;
+      }
+      // 证件类型（健康证件）
+      if (is.existy(healthPaperworkType) &amp;&amp; is.not.empty(healthPaperworkType)) {
+        params.health_certificate_type = healthPaperworkType ? Number(healthPaperworkType) : PaperworkType.health;
+      }
+      // 健康证件号码（健康证件）
+      if (is.existy(healthPaperworkNumber) &amp;&amp; is.not.empty(healthPaperworkNumber)) {
+        params.health_certificate_no = healthPaperworkNumber;
+      }
+      // 证件正面照（健康证件）
+      if (is.existy(healthFrontPhotos) &amp;&amp; is.not.empty(healthFrontPhotos)
+        &amp;&amp; is.existy(healthFrontPhotos.keys) &amp;&amp; is.not.empty(healthFrontPhotos.keys)) {
+        params.health_certificate = healthFrontPhotos.keys[0];
+      }
+      // 证件反面照（健康证件）
+      if (is.existy(healthObversePhotos) &amp;&amp; is.not.empty(healthObversePhotos)
+        &amp;&amp; is.existy(healthObversePhotos.keys) &amp;&amp; is.not.empty(healthObversePhotos.keys)) {
+        params.health_certificate_back = healthObversePhotos.keys[0];
+      }
+      // 手持证件半身照（健康证件）
+      if (is.existy(healthClosePhotos) &amp;&amp; is.not.empty(healthClosePhotos)
+        &amp;&amp; is.existy(healthClosePhotos.keys) &amp;&amp; is.not.empty(healthClosePhotos.keys)) {
+        params.health_certificate_in_hand = healthClosePhotos.keys[0];
+      }
+      // 证件类型（驾驶证件）
+      if (is.existy(drivePaperworkType) &amp;&amp; is.not.empty(drivePaperworkType)) {
+        params.drive_certificate_type = drivePaperworkType ? Number(drivePaperworkType) : PaperworkType.drive;
+      }
+      // 证件号码（驾驶证件）
+      if (is.existy(drivePaperworkNumber) &amp;&amp; is.not.empty(drivePaperworkNumber)) {
+        params.drive_certificate_no = drivePaperworkNumber;
+      }
+      // 证件正面照（驾驶证件）
+      if (is.existy(driveFrontPhotos) &amp;&amp; is.not.empty(driveFrontPhotos)
+        &amp;&amp; is.existy(driveFrontPhotos.keys) &amp;&amp; is.not.empty(driveFrontPhotos.keys)) {
+        params.drive_certificate_front = driveFrontPhotos.keys[0];
+      }
+      // 证件反面照（驾驶证件）
+      if (is.existy(driveObversePhotos) &amp;&amp; is.not.empty(driveObversePhotos)
+        &amp;&amp; is.existy(driveObversePhotos.keys) &amp;&amp; is.not.empty(driveObversePhotos.keys)) {
+        params.drive_certificate_back = driveObversePhotos.keys[0];
+      }
+      // 手持证件半身照（驾驶证件）
+      if (is.existy(driveClosePhotos) &amp;&amp; is.not.empty(driveClosePhotos)
+        &amp;&amp; is.existy(driveClosePhotos.keys) &amp;&amp; is.not.empty(driveClosePhotos.keys)) {
+        params.drive_certificate_in_hand = driveClosePhotos.keys[0];
+      }
+      // 推荐公司
+      if (is.existy(referrerCompany) &amp;&amp; is.not.empty(referrerCompany)) {
+        params.referrer_company_id = referrerCompany;
+      }
+      // 推荐平台
+      if (is.existy(referrerPlatform) &amp;&amp; is.not.empty(referrerPlatform)) {
+        params.referrer_platform = Number(referrerPlatform);
+      }
+      // 推荐人姓名
+      if (is.existy(staffIdentityName) &amp;&amp; is.not.empty(staffIdentityName)) {
+        params.referrer_name = staffIdentityName;
+      }
+      // 推荐人身份证
+      if (is.existy(staffIdentityCard) &amp;&amp; is.not.empty(staffIdentityCard)) {
+        params.referrer_identity_no = staffIdentityCard;
+      }
+      // 推荐人手机号
+      if (is.existy(staffIdentityPhone) &amp;&amp; is.not.empty(staffIdentityPhone)) {
+        params.referrer_phone = staffIdentityPhone;
+      }
+      // 出生日期
+      if (is.existy(birthday) &amp;&amp; is.not.empty(birthday)) {
+        params.born_in = birthday ? Number(birthday.format('YYYYMMDD')) : '';
+      }
+      // 政治面貌
+      if (is.existy(politicalStatus) &amp;&amp; is.not.empty(politicalStatus)) {
+        params.politics_status = Number(politicalStatus);
+      }
+      // 婚姻状况
+      if (is.existy(maritalStatus) &amp;&amp; is.not.empty(maritalStatus)) {
+        params.marital_status = Number(maritalStatus);
+      }
+      // 户口所在地
+      if (is.existy(accountLocation) &amp;&amp; is.not.empty(accountLocation)) {
+        params.native_place = accountLocation;
+      }
+      // 固定电话
+      if (is.existy(fixedTelephone) &amp;&amp; is.not.empty(fixedTelephone)) {
+        params.telephone = fixedTelephone;
+      }
+      // 邮箱
+      if (is.existy(email) &amp;&amp; is.not.empty(email)) {
+        params.email = email;
+      }
+      // 紧急联系人
+      if (is.existy(emergencyContact) &amp;&amp; is.not.empty(emergencyContact)) {
+        params.emergency_contact = emergencyContact;
+      }
+      // 身高
+      if (is.existy(height) &amp;&amp; is.not.empty(height)) {
+        params.height = height;
+      }
+      // 体重
+      if (is.existy(weight) &amp;&amp; is.not.empty(weight)) {
+        params.weight = weight;
+      }
+      // 星座
+      if (is.existy(constellation) &amp;&amp; is.not.empty(constellation)) {
+        params.constellation = constellation;
+      }
+      // 兴趣爱好
+      if (is.existy(hobby) &amp;&amp; is.not.empty(hobby)) {
+        params.interest = hobby;
+      }
+      // 特长
+      if (is.existy(specialty) &amp;&amp; is.not.empty(specialty)) {
+        params.speciality = specialty;
+      }
+      // 最高学历
+      if (is.existy(highestEducation) &amp;&amp; is.not.empty(highestEducation)) {
+        params.highest_education = Number(highestEducation);
+      }
+      // 专业职称
+      if (is.existy(jobTitle) &amp;&amp; is.not.empty(jobTitle)) {
+        params.professional = jobTitle;
+      }
+      // 外语及等级
+      if (is.existy(foreignLanguage) &amp;&amp; is.not.empty(foreignLanguage)) {
+        params.language_level = foreignLanguage;
+      }
+      // 学位证照片
+      if (is.existy(degreeCertificatePhotos) &amp;&amp; is.not.empty(degreeCertificatePhotos)
+      &amp;&amp; is.existy(degreeCertificatePhotos.keys) &amp;&amp; is.not.empty(degreeCertificatePhotos.keys)) {
+        params.degree = degreeCertificatePhotos.keys;
+      }
+      // 学习经历
+      if (is.existy(learnExperience) &amp;&amp; is.not.empty(learnExperience)) {
+        params.academy_list = learnExperience.map((item) => {
+          return {
+            institution_name: item.institutionName || '', // 院校名称
+            education: item.dynamicEducation || '',       // 学历
+            profession: item.profession || '',            // 专业
+            start_time: item.period &amp;&amp; item.period[0] ? item.period[0].format('YYYYMMDD') : '',                // 开始时间
+            end_time: item.period &amp;&amp; item.period[1] ? item.period[1].format('YYYYMMDD') : '',                  // 结束时间
+          };
+        });
+      }
+      // 工作经历
+      if (is.existy(workExperience) &amp;&amp; is.not.empty(workExperience)) {
+        for (let i = 0; i &lt; workExperience.length; i += 1) {
+          if (workExperience[i].witnessPhone &amp;&amp; !/^\d{11}$/.test(workExperience[i].witnessPhone)) {
+            return message.error(`工作经历中第${i + 1}条数据，证明人电话格式错误`);
+          }
+        }
+        params.work_experience = workExperience.map((item) => {
+          return {
+            employer: item.employer || '',          // 工作单位
+            position: item.workPosition || '',      // 职位
+            certifier_name: item.witness || '',     // 证明人姓名
+            proof_phone: item.witnessPhone || '',   // 证明人电话
+            work_start_time: item.workPeriod &amp;&amp; item.workPeriod[0] ? item.workPeriod[0].format('YYYYMMDD') : '', // 工作开始时间
+            work_end_time: item.workPeriod &amp;&amp; item.workPeriod[1] ? item.workPeriod[1].format('YYYYMMDD') : '',   // 工作结束时间
+          };
+        });
+      }
+
+      const result = yield call(createEmployee, params);
+
+      // 报错信息
+      if (result.zh_message) {
+        if (onSuccessCallback) {
+          onSuccessCallback();
+        }
+        return message.error(result.zh_message);
+      }
+      // 判断数据是否为空
+      if (is.existy(result) &amp;&amp; is.truthy(result.ok)) {
+        message.success('创建成功，页面即将跳转');
+        setTimeout(() => {
+          window.location.href = `/#/Employee/Manage?fileType=${fileType === `${FileType.first}` ? 'first' : fileType === `${FileType.second}` ? 'second' : 'staff'}`;
+        }, 2000);
+      }
+    },
+    /**
+     * 更新员工信息
+     * @param {string}  staffId                 员工id
+     * @param {number}  fileType                档案类型
+     * @param {number}  industryType            所属场景
+     * @param {string}  householdNumber         个户编号
+     * @param {string}  unityNumber             个独编号
+     * @param {string}  unityName               个独名称
+     * @param {number}  householdType           个户类型
+     * @param {string}  post                    职能
+     * @param {string}  employeeId              员工编号
+     * @param {string}  platformCode            平台
+     * @param {string}   supplierIds            供应商
+     * @param {string}   cityCodes              城市
+     * @param {array}   districts               商圈
+     * @param {number}   signType               签约类型
+     * @param {string}  entryDate               合作日期
+     * @param {string}  signedDate              合同生效日期
+     * @param {string}  contractBelong          合同甲方
+     * @param {string}  signCycle               签约周期数
+     * @param {number}  timeCycle               签约周期单位
+     * @param {number}  contractType            合同类型
+     * @param {string}  contractNumber          合同编号
+     * @param {string}  formalDate              转正日期
+     * @param {object}  contractPhotos          合同照片
+     * @param {number}  idPaperworkType         证件类型（身份证件）
+     * @param {string}  idPaperworkNumber       证件号码（身份证件）
+     * @param {string}  platformIdCard          平台身份证号（身份证件）
+     * @param {string}  customId                第三方平台ID（身份证件）
+     * @param {object}  idFrontPhotos           证件正面照（身份证件）
+     * @param {object}  idObversePhotos         证件反面照（身份证件）
+     * @param {object}  idClosePhotos           手持证件半身照（身份证件）
+     * @param {number}  healthPaperworkType     证件类型（健康证件）
+     * @param {string}  healthPaperworkNumber   证件号码（健康证件）
+     * @param {object}  healthFrontPhotos       证件正面照（健康证件）
+     * @param {object}  healthObversePhotos     证件反面照（健康证件）
+     * @param {object}  healthClosePhotos       手持证件半身照（健康证件）
+     * @param {number}  drivePaperworkType      证件类型（驾驶证件）
+     * @param {string}  drivePaperworkNumber    证件号码（驾驶证件）
+     * @param {object}  driveFrontPhotos        证件正面照（驾驶证件）
+     * @param {object}  driveObversePhotos      证件反面照（驾驶证件）
+     * @param {object}  driveClosePhotos        手持证件半身照（驾驶证件）
+     * @param {number}  recruitmentChannel      推荐渠道
+     * @param {string}  referrerCompany         推荐公司
+     * @param {string}  staffIdentityCard       推荐人身份证
+     * @param {string}  staffIdentityName       推荐人姓名
+     * @param {string}  staffIdentityPhone      推荐人手机号
+     * @param {number}  referrerPlatform        推荐平台
+     * @param {string}  name                    姓名
+     * @param {number}  gender                  性别
+     * @param {string}  birthday                出生日期
+     * @param {string}  age                     年龄
+     * @param {string}  national                民族
+     * @param {number}  politicalStatus         政治面貌
+     * @param {number}  maritalStatus           婚姻状况
+     * @param {string}  birthplace              籍贯
+     * @param {string}  accountLocation         户口所在地
+     * @param {string}  oftenAddress            常居地
+     * @param {string}  phone                   手机号
+     * @param {string}  fixedTelephone          固定电话
+     * @param {string}  email                   邮箱
+     * @param {string}  education               学历
+     * @param {string}  emergencyContact        紧急联系人
+     * @param {string}  emergencyContactPhone   紧急联系人电话
+     * @param {number}  height                  身高
+     * @param {number}  weight                  体重
+     * @param {string}  constellation           星座
+     * @param {string}  hobby                   兴趣爱好
+     * @param {string}  specialty               特长
+     * @param {number}  highestEducation        最高学历
+     * @param {string}  jobTitle                专业职称
+     * @param {string}  foreignLanguage         外语及等级
+     * @param {object}  degreeCertificatePhotos 学位证照片
+     * @param {array}  learnExperience          学习经历
+     * @param {array}  workExperience           工作经历
+     * @memberof module:model/employee/manage~employee/manage/effects
+     */
+    *updateEmployee({ payload }, { call, select }) {
+      // state中的profile_type（档案类型）
+      const stateFileType = yield select(state => state.employeeManage.employeeDetail.profile_type);
+      const {
+        staffId,                 // 员工id
+        fileType,                // 档案类型
+        industryType,            // 所属场景
+        householdNumber,         // 个户编号
+        unityNumber,             // 个独编号
+        unityName,               // 个独名称
+        householdType,           // 个户类型
+        post,                    // 职能
+        employeeId,              // 员工编号
+        signType,                // 签约类型
+        entryDate,               // 合作日期
+        signedDate,              // 合同生效日期
+        contractBelong,          // 合同甲方
+        signCycle,               // 签约周期数
+        timeCycle,               // 签约周期单位
+        contractType,            // 合同类型
+        contractNumber,          // 合同编号
+        formalDate,              // 转正日期
+        contractPhotos,          // 合同照片
+        idPaperworkType,         // 证件类型（身份证件）
+        idPaperworkNumber,       // 证件号码（身份证件）
+        platformIdCard,          // 平台身份证号（身份证件）
+        customId,                // 第三方平台ID（身份证件）
+        idFrontPhotos,           // 证件正面照（身份证件）
+        idObversePhotos,         // 证件反面照（身份证件）
+        idClosePhotos,           // 手持证件半身照（身份证件）
+        healthPaperworkType,     // 证件类型（健康证件）
+        healthPaperworkNumber,   // 证件号码（健康证件）
+        healthFrontPhotos,       // 证件正面照（健康证件）
+        healthObversePhotos,     // 证件反面照（健康证件）
+        healthClosePhotos,       // 手持证件半身照（健康证件）
+        drivePaperworkType,      // 证件类型（驾驶证件）
+        drivePaperworkNumber,    // 证件号码（驾驶证件）
+        driveFrontPhotos,        // 证件正面照（驾驶证件）
+        driveObversePhotos,      // 证件反面照（驾驶证件）
+        driveClosePhotos,        // 手持证件半身照（驾驶证件）
+        recruitmentChannel,      // 推荐渠道
+        referrerCompany,         // 推荐公司
+        staffIdentityCard,       // 推荐人身份证
+        staffIdentityName,       // 推荐人姓名
+        staffIdentityPhone,      // 推荐人手机号
+        referrerPlatform,        // 推荐平台
+        name,                    // 姓名
+        gender,                  // 性别
+        birthday,                // 出生日期
+        age,                     // 年龄
+        national,                // 民族
+        politicalStatus,         // 政治面貌
+        maritalStatus,           // 婚姻状况
+        birthplace,              // 籍贯
+        accountLocation,         // 户口所在地
+        oftenAddress,            // 常居地
+        phone,                   // 手机号
+        fixedTelephone,          // 固定电话
+        email,                   // 邮箱
+        education,               // 学历
+        emergencyContact,        // 紧急联系人
+        emergencyContactPhone,   // 紧急联系人电话
+        height,                  // 身高
+        weight,                  // 体重
+        constellation,           // 星座
+        hobby,                   // 兴趣爱好
+        specialty,               // 特长
+        highestEducation,        // 最高学历
+        jobTitle,                // 专业职称
+        foreignLanguage,         // 外语及等级
+        degreeCertificatePhotos, // 学位证照片
+        learnExperience,         // 学习经历
+        workExperience,          // 工作经历
+        onSuccessCallback,       // 请求成功回调
+      } = payload;
+      // 员工id
+      if (is.not.existy(staffId) || is.empty(staffId)) {
+        if (onSuccessCallback) {
+          onSuccessCallback();
+        }
+        return message.error('操作失败，员工id不能为空');
+      }
+      const params = {
+        _id: staffId,            // 员工id
+      };
+      if ((healthFrontPhotos &amp;&amp; healthFrontPhotos.keys[0] &amp;&amp; healthObversePhotos &amp;&amp; !healthObversePhotos.keys[0])
+      || (healthFrontPhotos &amp;&amp; !healthFrontPhotos.keys[0] &amp;&amp; healthObversePhotos &amp;&amp; healthObversePhotos.keys[0])) {
+        if (onSuccessCallback) {
+          onSuccessCallback();
+        }
+        return message.error('健康证件类型下的证件正反面均不能为空', 5);
+      }
+      if ((driveFrontPhotos &amp;&amp; driveFrontPhotos.keys[0] &amp;&amp; driveObversePhotos &amp;&amp; !driveObversePhotos.keys[0])
+      || (driveFrontPhotos &amp;&amp; !driveFrontPhotos.keys[0] &amp;&amp; driveObversePhotos &amp;&amp; driveObversePhotos.keys[0])) {
+        if (onSuccessCallback) {
+          onSuccessCallback();
+        }
+        return message.error('驾驶证件类型下的证件正反面均不能为空', 5);
+      }
+      // 档案类型
+      if (is.existy(fileType) &amp;&amp; is.not.empty(fileType)) {
+        params.profile_type = Number(fileType);
+      }
+      // 签约类型
+      if (is.existy(signType) &amp;&amp; is.not.empty(signType)) {
+        params.sign_type = Number(signType);
+      }
+      // 合作日期
+      if (is.existy(entryDate) &amp;&amp; is.not.empty(entryDate)) {
+        params.entry_date = entryDate ? Number(entryDate.format('YYYYMMDD')) : '';
+      }
+      // 合同生效日期
+      if (is.existy(signedDate) &amp;&amp; is.not.empty(signedDate)) {
+        params.signed_date = signedDate ? Number(signedDate.format('YYYYMMDD')) : '';
+      }
+      // 合同甲方
+      if (is.existy(contractBelong) &amp;&amp; is.not.empty(contractBelong)) {
+        params.contract_belong_id = contractBelong;
+      }
+      // 签约周期数
+      if (is.existy(signCycle) &amp;&amp; is.not.empty(signCycle)) {
+        params.sign_cycle = Number(signCycle);
+      }
+      // 签约周期单位
+      if (is.existy(timeCycle) &amp;&amp; is.not.empty(timeCycle)) {
+        params.sign_cycle_unit = Number(timeCycle);
+      }
+      // 合同类型
+      if (is.existy(contractType) &amp;&amp; is.not.empty(contractType)) {
+        params.contract_type = Number(contractType);
+      }
+      // 证件类型（身份证件）
+      if (is.existy(idPaperworkType) &amp;&amp; is.not.empty(idPaperworkType)) {
+        params.identity_certificate_type = Number(idPaperworkType);
+      }
+      // 证件号码（身份证件）
+      if (is.existy(idPaperworkNumber) &amp;&amp; is.not.empty(idPaperworkNumber)) {
+        params.identity_card_id = idPaperworkNumber;
+      }
+      // 推荐渠道
+      if (is.existy(recruitmentChannel) &amp;&amp; is.not.empty(recruitmentChannel)) {
+        params.recruitment_channel_id = Number(recruitmentChannel);
+      }
+      // 姓名
+      if (is.existy(name) &amp;&amp; is.not.empty(name)) {
+        params.name = name;
+      }
+      // 性别
+      if (is.existy(gender) &amp;&amp; is.not.empty(gender)) {
+        params.gender_id = Number(gender);
+      }
+      // 年龄
+      if (is.existy(age) &amp;&amp; is.not.empty(age)) {
+        params.age = age;
+      }
+      // 民族
+      if (is.existy(national) &amp;&amp; is.not.empty(national)) {
+        params.national = national;
+      }
+      // 籍贯
+      if (is.existy(birthplace) &amp;&amp; is.not.empty(birthplace)) {
+        params.birth_place = birthplace;
+      }
+      // 常居地
+      if (is.existy(oftenAddress) &amp;&amp; is.not.empty(oftenAddress)) {
+        params.often_address = oftenAddress;
+      }
+      // 手机号
+      if (is.existy(phone) &amp;&amp; is.not.empty(phone)) {
+        params.phone = phone;
+      }
+      // 紧急联系人电话
+      if (is.existy(emergencyContactPhone) &amp;&amp; is.not.empty(emergencyContactPhone)) {
+        params.emergency_contact_phone = emergencyContactPhone;
+      }
+      // 所属场景
+      if (is.existy(industryType) &amp;&amp; is.not.empty(industryType)) {
+        params.industry_code = Number(industryType);
+      }
+      // 个户类型
+      if (is.existy(householdType) &amp;&amp; is.not.empty(householdType)) {
+        params.individual_type = Number(householdType);
+      }
+      // 职能
+      if (is.existy(post) &amp;&amp; is.not.empty(post)) {
+        params.office = post;
+      }
+      // 个户编号
+      if (is.existy(householdNumber) &amp;&amp; is.not.empty(householdNumber)) {
+        params.personal_company_no = householdNumber;
+      }
+      // 个独编号
+      if (is.existy(unityNumber) &amp;&amp; is.not.empty(unityNumber)) {
+        params.company_no = unityNumber;
+      }
+      // 个独名称
+      if (is.existy(unityName) &amp;&amp; is.not.empty(unityName)) {
+        params.company_name = unityName;
+      }
+      // 员工编号
+      if (is.existy(employeeId) &amp;&amp; is.not.empty(employeeId)) {
+        params.staff_no = employeeId;
+      }
+      // 合同编号
+      if (is.existy(contractNumber) &amp;&amp; is.not.empty(contractNumber)) {
+        params.contract_no = contractNumber;
+      }
+      // 转正日期
+      if (is.existy(formalDate) &amp;&amp; is.not.empty(formalDate)) {
+        params.regular_date = formalDate ? Number(formalDate.format('YYYYMMDD')) : '';
+      }
+      // 平台身份证号（身份证件）
+      if (is.existy(platformIdCard) &amp;&amp; is.not.empty(platformIdCard)) {
+        params.associated_identity_card_id = platformIdCard;
+      }
+      // 第三方平台ID（身份证件））
+      if (is.existy(customId) &amp;&amp; is.not.empty(customId)) {
+        params.custom_id = customId;
+      }
+      // 合同照片
+      if (is.existy(contractPhotos) &amp;&amp; is.not.empty(contractPhotos)
+        &amp;&amp; is.existy(contractPhotos.keys) &amp;&amp; is.not.empty(contractPhotos.keys)) {
+        params.contract_photo_list = contractPhotos.keys;
+      }
+      // 证件正面照（身份证件）
+      if (is.existy(idFrontPhotos) &amp;&amp; is.not.empty(idFrontPhotos)
+        &amp;&amp; is.existy(idFrontPhotos.keys) &amp;&amp; is.not.empty(idFrontPhotos.keys)) {
+        params.identity_card_front = idFrontPhotos.keys[0];
+      }
+      // 证件反面照（身份证件）
+      if (is.existy(idObversePhotos) &amp;&amp; is.not.empty(idObversePhotos)
+        &amp;&amp; is.existy(idObversePhotos.keys) &amp;&amp; is.not.empty(idObversePhotos.keys)) {
+        params.identity_card_back = idObversePhotos.keys[0];
+      }
+      // 手持证件半身照（身份证件）
+      if (is.existy(idClosePhotos) &amp;&amp; is.not.empty(idClosePhotos)
+        &amp;&amp; is.existy(idClosePhotos.keys) &amp;&amp; is.not.empty(idClosePhotos.keys)) {
+        params.identity_card_in_hand = idClosePhotos.keys[0];
+      }
+      // 员工编号
+      if (is.existy(employeeId) &amp;&amp; is.not.empty(employeeId)) {
+        params.staff_no = employeeId;
+      }
+      // 证件类型（健康证件）
+      if (is.existy(healthPaperworkType) &amp;&amp; is.not.empty(healthPaperworkType)) {
+        params.health_certificate_type = healthPaperworkType ? Number(healthPaperworkType) : PaperworkType.health;
+      }
+      // 健康证件号码（健康证件）
+      if (is.existy(healthPaperworkNumber) &amp;&amp; is.not.empty(healthPaperworkNumber)) {
+        params.health_certificate_no = healthPaperworkNumber;
+      }
+      // 证件正面照（健康证件）
+      if (`${stateFileType}` !== `${FileType.first}` &amp;&amp; is.existy(healthFrontPhotos) &amp;&amp; is.not.empty(healthFrontPhotos)) {
+        params.health_certificate = is.existy(healthFrontPhotos.keys) &amp;&amp; is.not.empty(healthFrontPhotos.keys) ? healthFrontPhotos.keys[0] : '';
+      }
+      // 证件反面照（健康证件）
+      if (`${stateFileType}` !== `${FileType.first}` &amp;&amp; is.existy(healthObversePhotos) &amp;&amp; is.not.empty(healthObversePhotos)) {
+        params.health_certificate_back = is.existy(healthObversePhotos.keys) &amp;&amp; is.not.empty(healthObversePhotos.keys) ? healthObversePhotos.keys[0] : '';
+      }
+      // 手持证件半身照（健康证件）
+      if (`${stateFileType}` !== `${FileType.first}` &amp;&amp; is.existy(healthClosePhotos) &amp;&amp; is.not.empty(healthClosePhotos)) {
+        params.health_certificate_in_hand = is.existy(healthClosePhotos.keys) &amp;&amp; is.not.empty(healthClosePhotos.keys) ? healthClosePhotos.keys[0] : '';
+      }
+      // 证件类型（驾驶证件）
+      if (is.existy(drivePaperworkType) &amp;&amp; is.not.empty(drivePaperworkType)) {
+        params.drive_certificate_type = drivePaperworkType ? Number(drivePaperworkType) : PaperworkType.drive;
+      }
+      // 证件号码（驾驶证件）
+      if (is.existy(drivePaperworkNumber) &amp;&amp; is.not.empty(drivePaperworkNumber)) {
+        params.drive_certificate_no = drivePaperworkNumber;
+      }
+      // 证件正面照（驾驶证件）
+      if (`${stateFileType}` !== `${FileType.first}` &amp;&amp; is.existy(driveFrontPhotos) &amp;&amp; is.not.empty(driveFrontPhotos)) {
+        params.drive_certificate_front = is.existy(driveFrontPhotos.keys) &amp;&amp; is.not.empty(driveFrontPhotos.keys) ? driveFrontPhotos.keys[0] : '';
+      }
+      // 证件反面照（驾驶证件）
+      if (`${stateFileType}` !== `${FileType.first}` &amp;&amp; is.existy(driveObversePhotos) &amp;&amp; is.not.empty(driveObversePhotos)) {
+        params.drive_certificate_back = is.existy(driveObversePhotos.keys) &amp;&amp; is.not.empty(driveObversePhotos.keys) ? driveObversePhotos.keys[0] : '';
+      }
+      // 手持证件半身照（驾驶证件）
+      if (`${stateFileType}` !== `${FileType.first}` &amp;&amp; is.existy(driveClosePhotos) &amp;&amp; is.not.empty(driveClosePhotos)) {
+        params.drive_certificate_in_hand = is.existy(driveClosePhotos.keys) &amp;&amp; is.not.empty(driveClosePhotos.keys) ? driveClosePhotos.keys[0] : '';
+      }
+      // 推荐公司
+      if (is.existy(referrerCompany) &amp;&amp; is.not.empty(referrerCompany)) {
+        params.referrer_company_id = referrerCompany;
+      }
+      // 推荐平台
+      if (is.existy(referrerPlatform) &amp;&amp; is.not.empty(referrerPlatform)) {
+        params.referrer_platform = Number(referrerPlatform);
+      }
+      // 推荐人姓名
+      if (is.existy(staffIdentityName) &amp;&amp; is.not.empty(staffIdentityName)) {
+        params.referrer_name = staffIdentityName;
+      }
+      // 推荐人身份证
+      if (is.existy(staffIdentityCard) &amp;&amp; is.not.empty(staffIdentityCard)) {
+        params.referrer_identity_no = staffIdentityCard;
+      }
+      // 推荐人手机号
+      if (is.existy(staffIdentityPhone) &amp;&amp; is.not.empty(staffIdentityPhone)) {
+        params.referrer_phone = staffIdentityPhone;
+      }
+      // 出生日期
+      if (is.existy(birthday) &amp;&amp; is.not.empty(birthday)) {
+        params.born_in = birthday ? Number(birthday.format('YYYYMMDD')) : '';
+      }
+      // 政治面貌
+      if (is.existy(politicalStatus) &amp;&amp; is.not.empty(politicalStatus)) {
+        params.politics_status = Number(politicalStatus);
+      }
+      // 婚姻状况
+      if (is.existy(maritalStatus) &amp;&amp; is.not.empty(maritalStatus)) {
+        params.marital_status = Number(maritalStatus);
+      }
+      // 户口所在地
+      if (is.existy(accountLocation) &amp;&amp; is.not.empty(accountLocation)) {
+        params.native_place = accountLocation;
+      }
+      // 固定电话
+      if (is.existy(fixedTelephone) &amp;&amp; is.not.empty(fixedTelephone)) {
+        params.telephone = fixedTelephone;
+      }
+      // 邮箱
+      if (is.existy(email) &amp;&amp; is.not.empty(email)) {
+        params.email = email;
+      }
+      // 学历
+      if (is.existy(education) &amp;&amp; is.not.empty(education)) {
+        params.education = education;
+      }
+      // 紧急联系人
+      if (is.existy(emergencyContact) &amp;&amp; is.not.empty(emergencyContact)) {
+        params.emergency_contact = emergencyContact;
+      }
+      // 身高
+      if (is.existy(height) &amp;&amp; is.not.empty(height)) {
+        params.height = height;
+      }
+      // 体重
+      if (is.existy(weight) &amp;&amp; is.not.empty(weight)) {
+        params.weight = weight;
+      }
+      // 星座
+      if (is.existy(constellation) &amp;&amp; is.not.empty(constellation)) {
+        params.constellation = constellation;
+      }
+      // 兴趣爱好
+      if (is.existy(hobby) &amp;&amp; is.not.empty(hobby)) {
+        params.interest = hobby;
+      }
+      // 特长
+      if (is.existy(specialty) &amp;&amp; is.not.empty(specialty)) {
+        params.speciality = specialty;
+      }
+      // 最高学历
+      if (is.existy(highestEducation) &amp;&amp; is.not.empty(highestEducation)) {
+        params.highest_education = Number(highestEducation);
+      }
+      // 专业职称
+      if (is.existy(jobTitle) &amp;&amp; is.not.empty(jobTitle)) {
+        params.professional = jobTitle;
+      }
+      // 外语及等级
+      if (is.existy(foreignLanguage) &amp;&amp; is.not.empty(foreignLanguage)) {
+        params.language_level = foreignLanguage;
+      }
+      // 学位证照片
+      if (is.existy(degreeCertificatePhotos) &amp;&amp; is.not.empty(degreeCertificatePhotos)
+      &amp;&amp; is.existy(degreeCertificatePhotos.keys) &amp;&amp; is.not.empty(degreeCertificatePhotos.keys)) {
+        params.degree = degreeCertificatePhotos.keys;
+      }
+      // 学习经历
+      if (is.existy(learnExperience) &amp;&amp; is.not.empty(learnExperience)) {
+        params.academy_list = learnExperience.map((item) => {
+          return {
+            institution_name: item.institutionName || '', // 院校名称
+            education: item.dynamicEducation || '',       // 学历
+            profession: item.profession || '',            // 专业
+            start_time: item.period &amp;&amp; item.period[0] ? item.period[0].format('YYYYMMDD') : '', // 开始时间
+            end_time: item.period &amp;&amp; item.period[1] ? item.period[1].format('YYYYMMDD') : '',   // 结束时间
+          };
+        });
+      }
+      // 工作经历
+      if (is.existy(workExperience) &amp;&amp; is.not.empty(workExperience)) {
+        for (let i = 0; i &lt; workExperience.length; i += 1) {
+          if (workExperience[i].witnessPhone &amp;&amp; !/^\d{11}$/.test(workExperience[i].witnessPhone)) {
+            return message.error(`工作经历中第${i + 1}条数据，证明人电话格式错误`);
+          }
+        }
+        params.work_experience = workExperience.map((item) => {
+          return {
+            employer: item.employer || '',          // 工作单位
+            position: item.workPosition || '',      // 职位
+            certifier_name: item.witness || '',     // 证明人姓名
+            proof_phone: item.witnessPhone || '',   // 证明人电话
+            work_start_time: item.workPeriod &amp;&amp; item.workPeriod[0] ? item.workPeriod[0].format('YYYYMMDD') : '', // 工作开始时间
+            work_end_time: item.workPeriod &amp;&amp; item.workPeriod[1] ? item.workPeriod[1].format('YYYYMMDD') : '',   // 工作结束时间
+          };
+        });
+      }
+
+      const result = yield call(updateEmployee, params);
+      // 报错信息
+      if (result.zh_message) {
+        if (onSuccessCallback) {
+          onSuccessCallback();
+        }
+        return message.error(result.zh_message);
+      }
+      // 判断数据是否为空
+      if (is.existy(result) &amp;&amp; is.truthy(result.ok)) {
+        message.success('更新成功，页面即将跳转');
+        setTimeout(() => {
+          window.location.href = `/#/Employee/Manage?fileType=${`${stateFileType}` === `${FileType.first}` ? 'first' : `${stateFileType}` === `${FileType.second}` ? 'second' : 'staff'}`;
+        }, 2000);
+      }
+    },
+    /**
+     * 导出员工数据
+     * @param {number}  state 状态
+     * @param {string}  name  姓名
+     * @param {string}  phone  手机号
+     * @param {string}  personIdCard  身份证号
+     * @param {string}  platformId  第三方平台骑士id
+     * @param {string}  platformIdCard  第三方平台身份证号
+     * @param {string}  workType  工作性质
+     * @param {string}  contracts  合同归属
+     * @param {string}  positions  职位列表
+     * @param {array}   suppliers  供应商
+     * @param {array}   platforms  平台
+     * @param {array}   cities     城市
+     * @param {array}   districts  商圈
+     * @param {number}  account_id 账户id
+     * @memberof module:model/employee/manage~employee/manage/effects
+     */
+    *exportEmployees({ payload }, { call }) {
+      // const {
+      //   name,                        // 姓名
+      //   phone,                       // 手机号
+      //   workType,                    // 个户类型
+      //   contractBelongId,            // 合同归属
+      //   customId,                    // 第三方平台账户ID
+      //   associatedIdentityCardId,    // 第三方平台身份证号
+      //   identityCardId,              // 身份证号
+      //   recruitmentChannelId,        // 推荐渠道
+      //   referrerCompanyId,           // 推荐公司
+      //   state,                       // 签约状态
+      //   suppliers,
+      //   platforms,
+      //   cities,
+      //   districts,
+      //   healthCertificateDay,        // 健康证到期天数
+      // } = payload;
+
+      // 公共文本参数
+      const {
+        name,                        // 姓名
+        phone,                       // 手机号
+        identityCardId,              // 身份证号
+        state,                       // 签约状态
+        signType,                    // 签约类型
+        recruitmentChannelId,        // 推荐渠道
+        referrerCompanyId,           // 推荐公司
+        contractFirstPartyInfo,      // 合同甲方
+        fileType,                    // 员工页面类型
+      } = payload;
+
+      // 一线/个户 、 二线/个户公共文本参数
+      const {
+        platforms,                   // 平台
+        suppliers,                   // 供应商
+        cities,                      // 城市
+        districts,                   // 商圈
+        personalCompanyNo,           // 个户编号
+        companyNo,                   // 个独编号
+      } = payload;
+      // 一线/个户
+      const {
+        personalCompanyType,         // 个户类型
+        customId,                    // 第三方平台账户ID
+        healthCertificateDay,        // 健康证到期天数
+      } = payload;
+      // 二线/个户
+      const {
+        office,                      // 职能
+      } = payload;
+      // 员工
+      /* const {
+        currentUnit,                 // 所在单位
+        department,                  // 部门
+        post,                        // 岗位
+      } = payload; */
+
+      // 默认参数
+      const params = {
+        profile_type: FileType[fileType],
+        permission_id: Modules.OperateSystemAccountManageVerifyEmployee.id,
+        account_id: authorize.account.id,
+      };
+
+      // 姓名
+      if (is.existy(name) &amp;&amp; is.not.empty(name)) {
+        params.name = name;
+      }
+      // 手机号
+      if (is.existy(phone) &amp;&amp; is.not.empty(phone)) {
+        params.phone = phone;
+      }
+      // 身份证号
+      if (is.existy(identityCardId) &amp;&amp; is.not.empty(identityCardId)) {
+        params.identity_card_id = identityCardId;
+      }
+      // 签约状态
+      if (is.existy(state) &amp;&amp; is.not.empty(state) &amp;&amp; is.array(state)) {
+        params.state = state.map(item => Number(item));
+      }
+      // 签约类型
+      if (is.existy(signType) &amp;&amp; is.not.empty(signType)) {
+        params.sign_type = signType;
+      }
+      // 推荐渠道
+      if (is.existy(recruitmentChannelId) &amp;&amp; is.not.empty(recruitmentChannelId)) {
+        params.recruitment_channel_id = Number(recruitmentChannelId);
+      }
+      // 推荐公司
+      if (is.existy(referrerCompanyId) &amp;&amp; is.not.empty(referrerCompanyId)) {
+        params.referrer_company_id = referrerCompanyId;
+      }
+      // 合同甲方
+      if (is.existy(contractFirstPartyInfo) &amp;&amp; is.not.empty(contractFirstPartyInfo)) {
+        params.contract_belong_id = contractFirstPartyInfo;
+      }
+      // 平台
+      if (is.existy(platforms) &amp;&amp; is.not.empty(platforms) &amp;&amp; is.array(platforms)) {
+        params.platform_list = platforms;
+      }
+      // 供应商
+      if (is.existy(suppliers) &amp;&amp; is.not.empty(suppliers) &amp;&amp; is.array(suppliers)) {
+        params.supplier_list = suppliers;
+      }
+      // 城市
+      if (is.existy(cities) &amp;&amp; is.not.empty(cities)) {
+        if (is.array(cities)) {
+          params.city_spelling_list = cities;
+        }
+        if (is.string(cities)) {
+          params.city_spelling_list = [cities];
+        }
+      }
+      // 商圈
+      if (is.existy(districts) &amp;&amp; is.not.empty(districts)) {
+        if (is.array(districts)) {
+          params.biz_district_list = districts;
+        }
+        if (is.string(districts)) {
+          params.biz_district_list = [districts];
+        }
+      }
+      // 个户类型
+      if (is.existy(personalCompanyType) &amp;&amp; is.not.empty(personalCompanyType)) {
+        params.individual_type = personalCompanyType;
+      }
+      // 第三方平台账户id
+      if (is.existy(customId) &amp;&amp; is.not.empty(customId)) {
+        params.custom_id = customId;
+      }
+      // 健康证到期天数
+      if (is.existy(healthCertificateDay) &amp;&amp; is.not.empty(healthCertificateDay)) {
+        params.health_certificate_days = Number(healthCertificateDay);
+      }
+      // 个户编号
+      if (is.existy(personalCompanyNo) &amp;&amp; is.not.empty(personalCompanyNo)) {
+        params.personal_company_no = personalCompanyNo;
+      }
+      // 个独编号
+      if (is.existy(companyNo) &amp;&amp; is.not.empty(companyNo)) {
+        params.company_no = companyNo;
+      }
+      // 职能
+      if (is.existy(office) &amp;&amp; is.not.empty(office)) {
+        params.office = office;
+      }
+      /* // 所在单位
+      if (is.existy(currentUnit) &amp;&amp; is.not.empty(currentUnit)) {
+        params.current_unit = currentUnit;
+      }
+      // 部门
+      if (is.existy(department) &amp;&amp; is.not.empty(department)) {
+        params.current_unit = department;
+      }
+      // 岗位
+      if (is.existy(post) &amp;&amp; is.not.empty(post)) {
+        params.current_unit = post;
+      } */
+
+      const result = yield call(exportEmployees, params);
+      if (result &amp;&amp; is.existy(result.task_id)) {
+        message.success(`创建下载任务成功，任务id：${result.task_id}`);
+      } else {
+        message.error(result.message);
+      }
+    },
+    /**
+     * 解约
+     * @param {string}  staff_id 员工id
+     * @memberof module:model/employee/manage~employee/manage/effects
+     */
+    *employeeRelease({ payload }, { call }) {
+      const {
+        staffId,
+        departureDate,
+      } = payload;
+      if (is.not.existy(staffId) || is.empty(staffId)) {
+        return message.error('操作失败，员工Id不能为空');
+      }
+      if (is.not.existy(departureDate) || is.empty(departureDate)) {
+        return message.error('操作失败，离职日期不能为空');
+      }
+
+      const params = {
+        staff_id: staffId, // 员工id
+        departure_date: Number(departureDate), // 离职日期
+      };
+
+      const result = yield call(employeeRelease, params);
+
+      // 判断数据是否为空
+      if (is.existy(result) &amp;&amp; is.truthy(result.ok)) {
+        message.success('解约成功');
+        // 回调函数
+        if (payload.onSuccessCallback) {
+          payload.onSuccessCallback(result);
+        }
+      } else if (result.zh_message) {
+        message.error(result.zh_message);
+      }
+    },
+    /**
+     * 拒绝员工离职
+     * @param {string}  staff_id 员工id
+     * @param {number}  state   在职
+     * @param {boolean} option   离职批准
+     * @param {string}  permission_id  许可证id
+     * @param {string}  departure_date  离职时间
+     * @param {string}  departure_approver_account_id  离职id
+     * @memberof module:model/employee/manage~employee/manage/effects
+     */
+    *rejectEmployeeResign({ payload }, { call }) {
+      if (is.not.existy(payload.employeeId) || is.empty(payload.employeeId)) {
+        return message.error('操作失败，员工Id不能为空');
+      }
+
+      const params = {
+        staff_id: payload.employeeId, // 员工id
+        state: DutyState.onDuty,      // 在职
+        option: false,                // false 为离职审批
+        permission_id: Modules.OperateEmployeeResignVerifyButton.id,
+        departure_approver_account_id: authorize.account.id,
+      };
+
+      const result = yield call(updateEmployee, params);
+
+      // 判断数据是否为空
+      if (is.existy(result) &amp;&amp; is.truthy(result.ok)) {
+        message.success('更新成功');
+        // 回调函数
+        if (payload.onSuccessCallback) {
+          payload.onSuccessCallback(result);
+        }
+      }
+    },
+    /**
+     * 根据姓名，手机号，职位，获取在职员工数据
+     * @param {string}  name  姓名
+     * @param {string}  phone  手机号
+     * @param {string}  positions  职位
+     * @param {number}  state   员工状态为在职
+     * @param {number}  limit   一次性全部加载完成
+     * @param {number}  page    默认页
+     * @memberof module:model/employee/manage~employee/manage/effects
+     */
+    *fetchEmployeesByInfo({ payload }, { put }) {
+      if (is.not.existy(payload.name) || is.empty(payload.name)) {
+        return message.error('操作失败，用户名不能为空');
+      }
+      if (is.not.existy(payload.phone) || is.empty(payload.phone)) {
+        return message.error('操作失败，手机号不能为空');
+      }
+      if (is.not.existy(payload.positions) || is.empty(payload.positions)) {
+        return message.error('操作失败，职位信息错误');
+      }
+
+      const { name, phone, positions } = payload;
+      const parmas = {
+        name,         // 姓名
+        phone,        // 手机
+        positions,    // 职位
+        state: DutyState.onDuty,      // 员工状态为在职
+        limit: 500,   // 一次性全部加载完成
+        page: 1,
+      };
+      yield put({ type: 'fetchEmployees', payload: parmas });
+    },
+
+    /**
+     * 获取员工详情信息
+     * @param {string}  permission_id  权限id
+     * @param {string}  staff_id       员工id
+     * @memberof module:model/employee/manage~employee/manage/effects
+     */
+    *fetchEmployeeDetail({ payload }, { call, put }) {
+      if (is.not.existy(payload.employeeId) || is.empty(payload.employeeId)) {
+        return message.error('操作失败，员工档案id不能为空');
+      }
+
+      const params = {
+        _id: payload.employeeId, // 员工档案id
+      };
+
+      // 请求服务器
+      const result = yield call(fetchEmployeeDetail, params);
+
+      // 判断数据是否为空
+      if (is.existy(result)) {
+        yield put({ type: 'reduceEmployeeDetail', payload: result });
+      }
+    },
+    /**
+     * 获取员工的历史工作信息
+     * @param {string}  identity_card_id  身份证号码
+     * @param {number}  limit   一次性全部加载完成
+     * @param {number}  page    默认页
+     * @param {number}  sort    排序
+     * @memberof module:model/employee/manage~employee/manage/effects
+     */
+    *fetchEmployeeHistoryDetail({ payload }, { call, put }) {
+      if (is.not.existy(payload.personIdCard) || is.empty(payload.personIdCard)) {
+        return;
+      }
+      const params = {
+        identity_card_id: payload.personIdCard, // 身份证号码
+        page: 1,
+        limit: 50,  // 默认获取50条历史工作信息，实际上不会有这么多信息
+        sort: -1,   // 排序
+      };
+      const result = yield call(fetchEmployeeHistoryDetail, params);
+      if (is.existy(result)) {
+        yield put({ type: 'reduceEmployeeHistoryDetail', payload: result });
+      }
+    },
+    /**
+     * 重置员工数据
+     * @param {}
+     * @todo 接口需升级优化
+     * @memberof module:model/employee/manage~employee/manage/effects
+     */
+    *resetEmployees({ payload }, { put }) {
+      yield put({ type: 'reduceEmployees', payload: {} });
+    },
+    /**
+     * 上传文件
+     * @param {object} file 上传文件
+     * @param {function} onSuccessCallback 上传成功回调
+     * @memberof module:model/employee/manage~employee/manage/effects
+     */
+    *uploadFile({ payload }, { call }) {
+      const {
+        file,
+        onSuccessCallback,
+      } = payload;
+      if (is.not.existy(file) || is.empty(file)) {
+        return message.error('上传文件不能为空');
+      }
+      // 获取上传的token
+      const tokenResult = yield call(getUploadToken, { file_name: 'defaultFileName' });
+      if (is.truthy(tokenResult.ok) &amp;&amp; is.existy(tokenResult.token) &amp;&amp; is.existy(tokenResult.path)) {
+        // form形式上传文件
+        const formdata = new window.FormData();
+        formdata.append('key', tokenResult.path);
+        formdata.append('token', tokenResult.token);
+        formdata.append('file', payload.file);
+        const result = yield call(uploadFileToQiNiu, formdata);
+        if (is.not.existy(result.key) || is.empty(result.key)) {
+          return message.error('上传文件失败');
+        }
+        // 文件名称
+        const name = payload.file.name;
+        // 文件唯一标示（页面显示使用）
+        const uid = result.key;
+        // 请求返回的hash
+        const hash = result.hash;
+        // 根据key获取相应的文件地址
+        const fileURL = yield call(fetchFileURL, { target_id: result.key, name });
+        if (is.not.truthy(fileURL.ok)) {
+          return message.error('获取上传文件地址失败');
+        }
+        // 已经处理好的文件信息
+        const meta = {
+          uid,
+          hash,
+          status: 'done',
+          name: fileURL.name,
+          url: fileURL.url,
+        };
+        // 添加成功回调
+        if (onSuccessCallback) {
+          onSuccessCallback(meta);
+        }
+      } else {
+        return message.error('上传文件失败，无法获取上传token');
+      }
+    },
+  },
+  /**
+   * @namespace employee/manage/reducers
+   */
+  reducers: {
+    changeFileType(state, action) {
+      return { ...state, fileType: action.fileType };
+    },
+    /**
+     * 账户列表
+     * @returns {object} 更新 employeesFirst
+     * @memberof module:model/employee/manage~employee/manage/reducers
+     */
+    reduceEmployeesFirst(state, action) {
+      const { _meta } = action.payload;
+      const employeesFirst = {
+        ...action.payload,
+        meta: ResponseMeta.mapper(_meta),
+      };
+      return { ...state, employeesFirst };
+    },
+    /**
+     * 账户列表
+     * @returns {object} 更新 employeesSecond
+     * @memberof module:model/employee/manage~employee/manage/reducers
+     */
+    reduceEmployeesSecond(state, action) {
+      const { _meta } = action.payload;
+      const employeesSecond = {
+        ...action.payload,
+        meta: ResponseMeta.mapper(_meta),
+      };
+      return { ...state, employeesSecond };
+    },
+    /**
+     * 账户列表
+     * @returns {object} 更新 employees
+     * @memberof module:model/employee/manage~employee/manage/reducers
+     */
+    reduceEmployees(state, action) {
+      const { _meta } = action.payload;
+      const employees = {
+        ...action.payload,
+        meta: ResponseMeta.mapper(_meta),
+      };
+      return { ...state, employees };
+    },
+     /**
+     * 员工详情
+     * @returns {object} 更新 employeeDetail
+     * @memberof module:model/employee/manage~employee/manage/reducers
+     */
+    reduceEmployeeDetail(state, action) {
+      return { ...state, employeeDetail: action.payload };
+    },
+  },
+};
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-model_account_exception.html">model/account/exception</a></li><li><a href="module-model_account_manage.html">model/account/manage</a></li><li><a href="module-model_accountInfo.html">model/accountInfo</a></li><li><a href="module-model_admin_manage.html">model/admin/manage</a></li><li><a href="module-model_analysis.html">model/analysis</a></li><li><a href="module-model_application_common.html">model/application/common</a></li><li><a href="module-model_application_core.html">model/application/core</a></li><li><a href="module-model_application_files.html">model/application/files</a></li><li><a href="module-model_application_setting.html">model/application/setting</a></li><li><a href="module-model_application_subscription.html">model/application/subscription</a></li><li><a href="module-model_applicationManage.html">model/applicationManage</a></li><li><a href="module-model_district_manage.html">model/district/manage</a></li><li><a href="module-model_employee_contract.html">model/employee/contract</a></li><li><a href="module-model_employee_manage.html">model/employee/manage</a></li><li><a href="module-model_employee_transport.html">model/employee/transport</a></li><li><a href="module-model_expense_approval.html">model/expense/approval</a></li><li><a href="module-model_expense_borrowingRepaments.html">model/expense/borrowingRepaments</a></li><li><a href="module-model_expense_costOrder.html">model/expense/costOrder</a></li><li><a href="module-model_expense_examineFlow.html">model/expense/examineFlow</a></li><li><a href="module-model_expense_examineOrder.html">model/expense/examineOrder</a></li><li><a href="module-model_expense_houseContract.html">model/expense/houseContract</a></li><li><a href="module-model_expense_subject.html">model/expense/subject</a></li><li><a href="module-model_expense_type.html">model/expense/type</a></li><li><a href="module-model_finance_plan.html">model/finance/plan</a></li><li><a href="module-model_finance_task.html">model/finance/task</a></li><li><a href="module-model_financeFundsConfig.html">model/financeFundsConfig</a></li><li><a href="module-model_financeRulesGenerator.html">model/financeRulesGenerator</a></li><li><a href="module-model_financeSummaryManage.html">model/financeSummaryManage</a></li><li><a href="module-model_inquireModel.html">model/inquireModel</a></li><li><a href="module-model_materials.html">model/materials</a></li><li><a href="module-model_operationManage.html">model/operationManage</a></li><li><a href="module-model_supplier_manage.html">model/supplier/manage</a></li><li><a href="module-model_supply_deductions.html">model/supply/deductions</a></li><li><a href="module-model_supply_details.html">model/supply/details</a></li><li><a href="module-model_supply_distribution.html">model/supply/distribution</a></li><li><a href="module-model_supply_procurement.html">model/supply/procurement</a></li><li><a href="module-model_supply_set.html">model/supply/set</a></li><li><a href="module-model_system.html">model/system</a></li><li><a href="module-model_system_city.html">model/system/city</a></li><li><a href="module-model_system_download.html">model/system/download</a></li><li><a href="module-model_system_manage.html">model/system/manage</a></li><li><a href="module-model_system_recommendedCompany.html">model/system/recommendedCompany</a></li><li><a href="module-model_upload.html">model/upload</a></li><li><a href="module-services_account.html">services/account</a></li><li><a href="module-services_analysis.html">services/analysis</a></li><li><a href="module-services_employee.html">services/employee</a></li><li><a href="module-services_expense.html">services/expense</a></li><li><a href="module-services_expense_borrowingRepayment.html">services/expense/borrowingRepayment</a></li><li><a href="module-services_expense_costOrder.html">services/expense/costOrder</a></li><li><a href="module-services_expense_examineOrder.html">services/expense/examineOrder</a></li><li><a href="module-services_expense_houseContract.html">services/expense/houseContract</a></li><li><a href="module-services_finance.html">services/finance</a></li><li><a href="module-services_finance_funds.html">services/finance/funds</a></li><li><a href="module-services_inquire.html">services/inquire</a></li><li><a href="module-services_login.html">services/login</a></li><li><a href="module-services_salary.html">services/salary</a></li><li><a href="module-services_setting.html">services/setting</a></li><li><a href="module-services_stores.html">services/stores</a></li><li><a href="module-services_system.html">services/system</a></li><li><a href="module-services_system_city.html">services/system/city</a></li><li><a href="module-services_system_recommendedCompany.html">services/system/recommendedCompany</a></li><li><a href="module-services_system_supplier.html">services/system/supplier</a></li><li><a href="module-services_upload.html">services/upload</a></li></ul><h3>Namespaces</h3><ul><li><a href="module-model_account_exception-account_exception_effects.html">account/exception/effects</a></li><li><a href="module-model_account_exception-account_exception_reducers.html">account/exception/reducers</a></li><li><a href="module-model_account_exception-account_exception_subscriptions.html">account/exception/subscriptions</a></li><li><a href="module-model_account_manage-account_manage_effects.html">account/manage/effects</a></li><li><a href="module-model_account_manage-account_manage_reducers.html">account/manage/reducers</a></li><li><a href="module-model_accountInfo-account_accountInfo_effects.html">account/accountInfo/effects</a></li><li><a href="module-model_accountInfo-account_accountInfo_reducers.html">account/accountInfo/reducers</a></li><li><a href="module-model_accountInfo-account_accountInfo_subscriptions.html">account/accountInfo/subscriptions</a></li><li><a href="module-model_admin_manage-admin_manage_effects.html">admin/manage/effects</a></li><li><a href="module-model_admin_manage-admin_manage_reducers.html">admin/manage/reducers</a></li><li><a href="module-model_admin_manage-admin_manage_subscriptions.html">admin/manage/subscriptions</a></li><li><a href="module-model_analysis-analysis_effects.html">analysis/effects</a></li><li><a href="module-model_analysis-analysis_reducers.html">analysis/reducers</a></li><li><a href="module-model_analysis-analysis_subscriptions.html">analysis/subscriptions</a></li><li><a href="module-model_application_common-application_common_effects.html">application/common/effects</a></li><li><a href="module-model_application_common-application_common_reducers.html">application/common/reducers</a></li><li><a href="module-model_application_core-application_core_effects.html">application/core/effects</a></li><li><a href="module-model_application_files-application_files_effects.html">application/files/effects</a></li><li><a href="module-model_application_files-application_files_reducers.html">application/files/reducers</a></li><li><a href="module-model_application_setting-application_setting_effects.html">application/setting/effects</a></li><li><a href="module-model_application_setting-application_setting_reducers.html">application/setting/reducers</a></li><li><a href="module-model_application_subscription-application_subscription_subscriptions.html">application/subscription/subscriptions</a></li><li><a href="module-model_applicationManage-applicationManage_effects.html">applicationManage/effects</a></li><li><a href="module-model_applicationManage-applicationManage_reducers.html">applicationManage/reducers</a></li><li><a href="module-model_district_manage-district_manage_effects.html">district/manage/effects</a></li><li><a href="module-model_district_manage-district_manage_reducers.html">district/manage/reducers</a></li><li><a href="module-model_employee_contract-employee_contract_effects.html">employee/contract/effects</a></li><li><a href="module-model_employee_contract-employee_contract_reducers.html">employee/contract/reducers</a></li><li><a href="module-model_employee_manage-employee_manage_effects.html">employee/manage/effects</a></li><li><a href="module-model_employee_manage-employee_manage_reducers.html">employee/manage/reducers</a></li><li><a href="module-model_employee_transport-employee_transport_effects.html">employee/transport/effects</a></li><li><a href="module-model_employee_transport-employee_transport_reducers.html">employee/transport/reducers</a></li><li><a href="module-model_expense_approval-expense_approval_effects.html">expense/approval/effects</a></li><li><a href="module-model_expense_approval-expense_approval_reducers.html">expense/approval/reducers</a></li><li><a href="module-model_expense_approval-expense_approval_subscriptions.html">expense/approval/subscriptions</a></li><li><a href="module-model_expense_borrowingRepaments-expense_borrowingRepayment_effects.html">expense/borrowingRepayment/effects</a></li><li><a href="module-model_expense_borrowingRepaments-expense_costOrder_reducers.html">expense/costOrder/reducers</a></li><li><a href="module-model_expense_costOrder-expense_costOrder_effects.html">expense/costOrder/effects</a></li><li><a href="module-model_expense_costOrder-expense_costOrder_reducers.html">expense/costOrder/reducers</a></li><li><a href="module-model_expense_examineFlow-expense_examineFlow_effects.html">expense/examineFlow/effects</a></li><li><a href="module-model_expense_examineFlow-expense_examineFlow_reducers.html">expense/examineFlow/reducers</a></li><li><a href="module-model_expense_examineOrder-expense_examineOrder_effects.html">expense/examineOrder/effects</a></li><li><a href="module-model_expense_examineOrder-expense_examineOrder_reducers.html">expense/examineOrder/reducers</a></li><li><a href="module-model_expense_houseContract-expense_houseContract_effects.html">expense/houseContract/effects</a></li><li><a href="module-model_expense_houseContract-expense_houseContract_reducers.html">expense/houseContract/reducers</a></li><li><a href="module-model_expense_houseContract-expense_houseContract_subscriptions.html">expense/houseContract/subscriptions</a></li><li><a href="module-model_expense_subject-expense_subject_effects.html">expense/subject/effects</a></li><li><a href="module-model_expense_subject-expense_subject_reducers.html">expense/subject/reducers</a></li><li><a href="module-model_expense_subject-expense_subject_subscriptions.html">expense/subject/subscriptions</a></li><li><a href="module-model_expense_type-expense_type_effects.html">expense/type/effects</a></li><li><a href="module-model_expense_type-expense_type_reducers.html">expense/type/reducers</a></li><li><a href="module-model_finance_plan-finance_plan_effects.html">finance/plan/effects</a></li><li><a href="module-model_finance_plan-finance_plan_reducers.html">finance/plan/reducers</a></li><li><a href="module-model_finance_task-finance_task_effects.html">finance/task/effects</a></li><li><a href="module-model_finance_task-finance_task_reducers.html">finance/task/reducers</a></li><li><a href="module-model_financeFundsConfig-financeFundsConfig_effects.html">financeFundsConfig/effects</a></li><li><a href="module-model_financeFundsConfig-financeFundsConfig_reducers.html">financeFundsConfig/reducers</a></li><li><a href="module-model_financeRulesGenerator-financeRulesGenerator_effects.html">financeRulesGenerator/effects</a></li><li><a href="module-model_financeRulesGenerator-financeRulesGenerator_reducers.html">financeRulesGenerator/reducers</a></li><li><a href="module-model_financeSummaryManage-financeSummaryManage_effects.html">financeSummaryManage/effects</a></li><li><a href="module-model_financeSummaryManage-financeSummaryManage_reducers.html">financeSummaryManage/reducers</a></li><li><a href="module-model_financeSummaryManage-financeSummaryManage_subscriptions.html">financeSummaryManage/subscriptions</a></li><li><a href="module-model_inquireModel-inquireModel_effects.html">inquireModel/effects</a></li><li><a href="module-model_inquireModel-inquireModel_reducers.html">inquireModel/reducers</a></li><li><a href="module-model_materials-financeConfigIndex_effects.html">financeConfigIndex/effects</a></li><li><a href="module-model_materials-financeConfigIndex_reducers.html">financeConfigIndex/reducers</a></li><li><a href="module-model_materials-financeConfigTags_effects.html">financeConfigTags/effects</a></li><li><a href="module-model_materials-financeConfigTags_reducers.html">financeConfigTags/reducers</a></li><li><a href="module-model_materials-financeFundsManage_effects.html">financeFundsManage/effects</a></li><li><a href="module-model_materials-financeFundsManage_reducers.html">financeFundsManage/reducers</a></li><li><a href="module-model_materials-materials_effects.html">materials/effects</a></li><li><a href="module-model_materials-materials_reducers.html">materials/reducers</a></li><li><a href="module-model_materials-materials_subscriptions.html">materials/subscriptions</a></li><li><a href="module-model_operationManage-operationManage_effects.html">operationManage/effects</a></li><li><a href="module-model_operationManage-operationManage_reducers.html">operationManage/reducers</a></li><li><a href="module-model_supplier_manage-supplier_manage_effects.html">supplier/manage/effects</a></li><li><a href="module-model_supplier_manage-supplier_manage_reducers.html">supplier/manage/reducers</a></li><li><a href="module-model_supply_deductions-supply_deductions_effects.html">supply/deductions/effects</a></li><li><a href="module-model_supply_deductions-supply_deductions_reducers.html">supply/deductions/reducers</a></li><li><a href="module-model_supply_deductions-supply_deductSummarize_effects.html">supply/deductSummarize/effects</a></li><li><a href="module-model_supply_deductions-supply_deductSummarize_reducers.html">supply/deductSummarize/reducers</a></li><li><a href="module-model_supply_details-supply_details_effects.html">supply/details/effects</a></li><li><a href="module-model_supply_details-supply_details_reducers.html">supply/details/reducers</a></li><li><a href="module-model_supply_distribution-supply_distribution_effects.html">supply/distribution/effects</a></li><li><a href="module-model_supply_distribution-supply_distribution_reducers.html">supply/distribution/reducers</a></li><li><a href="module-model_supply_procurement-supply_procurement_effects.html">supply/procurement/effects</a></li><li><a href="module-model_supply_procurement-supply_procurement_reducers.html">supply/procurement/reducers</a></li><li><a href="module-model_supply_set-supply_set_effects.html">supply/set/effects</a></li><li><a href="module-model_supply_set-supply_set_reducers.html">supply/set/reducers</a></li><li><a href="module-model_system_city-system_city_effects.html">system/city/effects</a></li><li><a href="module-model_system_city-system_city_reducers.html">system/city/reducers</a></li><li><a href="module-model_system_download-system_download_effects.html">system/download/effects</a></li><li><a href="module-model_system_download-system_download_reducers.html">system/download/reducers</a></li><li><a href="module-model_system_manage-system_manage_effects.html">system/manage/effects</a></li><li><a href="module-model_system_manage-system_manage_reducers.html">system/manage/reducers</a></li><li><a href="module-model_system_recommendedCompany-system_recommendedCompany_effects.html">system/recommendedCompany/effects</a></li><li><a href="module-model_system_recommendedCompany-system_recommendedCompany_reducers.html">system/recommendedCompany/reducers</a></li><li><a href="module-model_system-system_effects.html">system/effects</a></li><li><a href="module-model_system-system_reducers.html">system/reducers</a></li><li><a href="module-model_system-system_subscriptions.html">system/subscriptions</a></li><li><a href="module-model_upload-upload_effects.html">upload/effects</a></li><li><a href="module-model_upload-upload_reducers.html">upload/reducers</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sun Apr 28 2019 11:25:15 GMT+0800 (CST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

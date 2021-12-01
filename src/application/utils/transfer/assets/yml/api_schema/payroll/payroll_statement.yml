@@ -1,0 +1,66 @@
+- module: 'payroll_statement'
+  apis:
+  - api_ns: 'payroll_statement'
+    cmd_list:
+      - summary: 结算单汇总列表
+        description: 对应UI页:结算单汇总页结算单列表
+        cmd: find
+        params:
+          - name: platform_code
+            type: string
+            required: false
+            note: '平台code'
+            enum_values: ''
+          - name: supplier_id
+            type: '[object_id]'
+            required: false
+            note: '供应商ID'
+            enum_values: ''
+          - name: city_code
+            type: '[string]'
+            required: false
+            note: '城市code'
+            enum_values: ''
+          - name: work_type
+            type: '[int]'
+            required: false
+            note: '工作性质(3001:兼职,3002:全职)'
+            enum_values: ''
+          - name: state
+            type: '[string]'
+            required: false
+            note: '审核状态(1=待审核, 50=审核中,100=审核通过)'
+            enum_values: ''
+        result:
+          type: 'api_result_set_with_meta'
+          schema: 'payroll_statement_list_item'
+        param_example:
+          platform_code: 'elem'
+          supplier_id: '5a655eaace6d2a430f748f82'
+          city_code: 'beijing'
+          work_type: 3001
+          state: 50
+        result_example:
+          _ids: ['5a655eaace6d2a430f748f82', '5a655eaace6d2a430f748f82']
+          start_date: '2018-10-10 18:10:10'
+          month: 8
+          salary_cycle_type: 1
+          platform_code: 'elem'
+          city_code: 'beijing'
+          position_id: 1010
+          knight_type_id: '5a655eaace6d2a430f748f82'
+          staff_count: 1000
+          order_count: 500
+          order_amount: 200
+          work_amount: 100
+          qa_amount: 200
+          operation_amount: 200
+          staff_deduction_total: 50
+          staff_payment_total: 50
+          material_deduction_total: 2000
+          real_pay_salary_total: 50000
+          human_affairs_deduction_total: 3000
+          actual_pay_salary_total: 40000
+          single_average_amount: 30
+          state: 100
+

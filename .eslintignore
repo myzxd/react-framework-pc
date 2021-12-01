@@ -1,0 +1,25 @@
+# node_modules
+node_modules/*
+
+# dist
+dist/*
+
+#doc
+doc/*
+
+# transfer
+src/application/utils/transfer/*
+
+# mock
+src/services/mock/*
+
+# automatic generated mapper
+src/application/object/expense/*
+src/application/object/salary/*
+src/routes/enterprise/payment/paymentOrder.js
+src/application/library/countly.js
+src/countly.min.js
+src/application/service/injector.js
+
+webpack.config.js
+bin/*

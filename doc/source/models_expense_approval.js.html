@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: models/expense/approval.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: models/expense/approval.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * 费用管理
+ * @module model/expense/approval
+ **/
+import is from 'is_js';
+import dot from 'dot-prop';
+import { message } from 'antd';
+
+import {
+  fetchSummaryRecordData,
+  fetchorderRecordDetails,
+  updateExamineData,
+  submitTypeApplyGroupS,
+  getExamineSimpleNameS,
+  fetchSummaryRecordDetail,
+  // fetchSummaryRecordProcess,
+  typeApplyDeleteS,
+} from '../../services/expense';
+
+import { authorize } from '../../application';
+
+export default {
+  /**
+   * 命名空间
+   * @default
+   */
+  namespace: 'approval',
+    /**
+   * 状态树
+   * @prop {object} approvalList 审批单列表
+   * @prop {object} getRecordList 记录明细列表
+   * @prop {array} summaryProcess 审批单记录
+   * @prop {boolean} dispatching 默认没有处理请求
+   * @prop {boolean} dispatching 审批单记录
+   * @prop {number} dispatching 默认没有处理请求
+   * @prop {array} orderRecordDetails 费用申请费用申请单详情, 数组格式，可能有多条数据
+   * @prop {object} summaryRecordData 费用申请记录列表 NOTE：summary,records
+   * @prop {array} examineSimpleNameList 审批流名称接口 NOTE：summary,records
+   * @prop {object} summaryRecordDetail 审批单详情接口 NOTE：summary,records
+   */
+  state: {
+
+    // audit
+    approvalList: {        // 审批单列表
+      _meta: {
+        has_more: false,
+        result_count: 0,
+      },
+      data: [],
+    },
+
+    // records
+    getRecordList: {        // 记录明细列表
+      _meta: {
+        has_more: false,
+        result_count: 0,
+      },
+      data: [],
+    },
+    recordEdit: undefined,         // 编辑审批单号
+
+    // summary
+    // summaryRecordProcess: [],       // 审批单进度
+    summaryProcess: [],  // 审批单记录
+    dispatching: false, // 默认没有处理请求
+
+    // template
+    uniqueHouseNum: 0, // 费用申请租房生成唯一房屋编号
+    orderRecordDetails: [],   // 费用申请费用申请单详情, 数组格式，可能有多条数据
+
+    // common
+    typeNameList: [], // 费用申请获得费用分组名称 NOTE：audit,records
+    summaryRecordData: {  // 费用申请记录列表 NOTE：summary,records
+      _meta: {
+        has_more: false,
+        result_count: 0,
+      },
+      data: [],
+    },
+    examineSimpleNameList: [],   // 审批流名称接口 NOTE：summary,records
+    summaryRecordDetail: {},       // 审批单详情接口 NOTE：summary,records
+  },
+  /**
+   * @namespace expense/approval/subscriptions
+   */
+  subscriptions: {
+    setup({ dispatch, history }) {
+      history.listen((location) => {
+        const { pathname, query } = location;
+        // 如果账号处于未登录，不进行处理
+        if (authorize.isLogin() === false) {
+          return;
+        }
+
+        // 断租，续租，续签，退租 表单页面
+        if (pathname === '/Expense/Manage/Records/Form') {
+          // 获取单条流水记录的详情数据
+          dispatch({ type: 'fetchorderRecordDetails', payload: { recordId: query.recordId } });
+        }
+
+        // 断租，续租，续签，退租 详情页面
+        if (pathname === '/Expense/Manage/Records/Detail') {
+          // 获取单条流水记录的详情数据
+          dispatch({ type: 'fetchorderRecordDetails', payload: { recordId: query.recordId } });
+        }
+
+        // 记录明细页面, 编辑明细列表
+        if (pathname === '/Expense/Manage/Records/Summary/Create') {
+          // 获取审批流列表数据
+          dispatch({ type: 'getExamineSimpleNameE' });
+        }
+      });
+    },
+  },
+  /**
+   * @namespace expense/approval/effects
+   */
+  effects: {
+
+    // records
+    // -------------记录明细-----------------
+    // 获取汇总审批单详情
+    * fetchSummaryRecordDetail({ payload }, { call, put }) {
+      if (is.empty(payload.id) || is.not.existy(payload.id)) {
+        return message.error('数据id不能为空，无法获取汇总审批单详情');
+      }
+      const params = {
+        examine_id: payload.id, // 流水号
+      };
+      const result = yield call(fetchSummaryRecordDetail, params);
+      if (result === undefined) {
+        return;
+      }
+      yield put({ type: 'reduceSummaryRecordDetail', payload: result.result });
+    },
+
+    // 费用申请费用申请单编辑--断租／续租／退租／续签:
+    // TODO: @韩健 命名有问题
+    * typeApplyEditRentE({ payload }, { call }) {
+      // HACK: 断租／续租／退租／续签 的提交接口，包装一层数组格式
+      const params = {
+        data: [payload],
+      };
+      const result = yield call(updateExamineData, params);
+      if (result === undefined) {
+        return;
+      }
+      if (result.ok) {
+        // 如果成功后退返回列表页
+        window.history.back(-1);
+      }
+    },
+
+    /**
+     * 费用申请单详情 NOTE：template，records
+     * @param {string} recordId 单条单号
+     * @memberof module:model/expense/approval~expense/approval/effects
+     */
+    * fetchorderRecordDetails({ payload }, { call, put }) {
+      if (is.empty(payload.recordId) || is.not.existy(payload.recordId)) {
+        return message.error('数据id错误，无法获取记录详情');
+      }
+      const params = {
+        order_id: payload.recordId,
+      };
+      const result = yield call(fetchorderRecordDetails, params);
+      if (result.ok) {
+        yield put({ type: 'reduceorderRecordDetails', payload: result.result });
+
+        yield put({ type: 'dispatchingR', payload: false });
+      }
+    },
+
+    /**
+     * 费用申请删除费用申请单审批 NOTE：summary，records
+     * @param {string} recordId   单条单号
+     * @param {number}  state     枚举值删除
+     * @param {string}  examineId 汇总单号
+     * @param {function}  onSuccessCallback 成功的回调函数
+     * @memberof module:model/expense/approval~expense/approval/effects
+     */
+    // TODO: @韩健 命名有问题
+    * typeApplyDeleteE({ payload }, { call, put, select }) {
+      const params = {
+        examine_id: payload.examineId,   // 汇总单号
+        order_id: payload.orderId,  // 单条单号
+        state: payload.state,   // 枚举值删除
+      };
+      const result = yield call(typeApplyDeleteS, params);
+      if (result === undefined) {
+        return;
+      }
+      if (result.ok) {
+        message.success('操作成功');
+        yield put({
+          type: 'fetchSummaryRecordData',
+          payload: {
+            examineflowId: payload.examineId,
+            limit: 30,
+            page: 1,
+          },
+        });
+        yield put({ type: 'fetchSummaryRecordDetail', payload: { id: payload.examineId } });
+        // 删除成功回调
+        if (payload.onSuccessCallback) {
+          const state = yield select();
+          const resultCount = dot.get(state, 'approval.summaryRecordData._meta.result_count');
+          payload.onSuccessCallback(resultCount);
+        }
+      }
+    },
+
+    /**
+     * 费用申请提交费用申请单审批 NOTE：summary，records
+     * @param {string}  examineId 审批单ID
+     * @param {string}  examineflowId 审批流ID
+     * @memberof module:model/expense/approval~expense/approval/effects
+     */
+    // TODO: @韩健 命名有问题
+    * submitTypeApplyGroupE({ payload }, { call, put }) {
+      // 审批单id
+      if (is.empty(payload.examineId) || is.not.existy(payload.examineId)) {
+        return message.error('审批单ID不能为空');
+      }
+      // 审批流ID
+      if (is.empty(payload.examineflowId) || is.not.existy(payload.examineflowId)) {
+        return message.error('审批流ID不能为空');
+      }
+      const params = {
+        examine_id: payload.examineId, // 审批单ID，提供则代表重新提交
+        examineflow_id: payload.examineflowId, // 审批流ID
+      };
+      const result = yield call(submitTypeApplyGroupS, params);
+      if (result === undefined) {
+        return;
+      }
+      if (result.ok) {
+        message.success('操作成功');
+        yield put({ type: 'dispatchingR', payload: true });
+        window.location.href = '#/Expense/Manage/ExamineOrder';
+      }
+    },
+
+    /**
+     * 获取审批流列表 NOTE：summary，records
+     * @todo 接口需升级优化
+     * @memberof module:model/expense/approval~expense/approval/effects
+     */
+    * getExamineSimpleNameE({ payload }, { call, put }) {
+      const result = yield call(getExamineSimpleNameS, payload);
+      if (result === undefined) {
+        return;
+      }
+      yield put({ type: 'getExamineSimpleNameR', payload: result.result });
+      yield put({ type: 'dispatchingR', payload: false });
+    },
+
+    /**
+     * 获取汇总审批单记录 NOTE：summary，records
+     * @param {number}  limit 总条数
+     * @param {number}  page  页数
+     * @param {number}  state  订单状态
+     * @param {array}   supplierList   供应商列表
+     * @param {string}  costclassId    费用分组id
+     * @param {string}  examineflowId  审核单ID流水号
+     * @param {string}  catalogId      科目类型id
+     * @param {string}  proposerName   申请人姓名
+     * @param {number}  thingState     房屋状态
+     * @memberof module:model/expense/approval~expense/approval/effects
+     */
+
+    * fetchSummaryRecordData({ payload }, { call, put }) {
+      const params = {
+        page: payload.page, // 页码
+        limit: payload.limit, // 条数
+      };
+      // 页码
+      if (is.existy(payload.page) &amp;&amp; is.not.empty(payload.page)) {
+        params.page = payload.page;
+      }
+      // 条数
+      if (is.existy(payload.limit) &amp;&amp; is.not.empty(payload.limit)) {
+        params.limit = payload.limit;
+      }
+      // 供应商列表
+      if (is.existy(payload.supplierList) &amp;&amp; is.not.empty(payload.supplierList)) {
+        params.supplier_list = payload.supplierList;
+      }
+      // 审核单ID流水号
+      if (is.existy(payload.examineflowId) &amp;&amp; is.not.empty(payload.examineflowId)) {
+        params.examineflow_id = payload.examineflowId;
+      }
+      // 费用分组id
+      if (is.existy(payload.costclassId) &amp;&amp; is.not.empty(payload.costclassId)) {
+        params.costclass_id = payload.costclassId;
+      }
+      // 科目类型id
+      if (is.existy(payload.catalogId) &amp;&amp; is.not.empty(payload.catalogId)) {
+        params.catalog_id = payload.catalogId;
+      }
+      // 申请人姓名
+      if (is.existy(payload.proposerName) &amp;&amp; is.not.empty(payload.proposerName)) {
+        params.proposer_name = payload.proposerName;
+      }
+      // 订单状态
+      if (is.existy(payload.state) &amp;&amp; is.not.empty(payload.state)) {
+        params.state = payload.state;
+      }
+      // 房屋状态
+      if (is.existy(payload.thingState) &amp;&amp; is.not.empty(payload.thingState)) {
+        params.thing_state = payload.thingState;
+      }
+      // sort
+      if (is.existy(payload.sort) &amp;&amp; is.not.empty(payload.sort)) {
+        params.sort = payload.sort;
+      }
+
+      const result = yield call(fetchSummaryRecordData, params);
+      if (result === undefined) {
+        return;
+      }
+      yield put({ type: 'reduceSummaryRecordData', payload: result });
+    },
+
+  },
+  /**
+   * @namespace expense/approval/reducers
+   */
+  reducers: {
+    /**
+     * 费用申请租房生成唯一房屋编号
+     * @returns {object} 更新 uniqueHouseNum
+     * @memberof module:model/expense/approval~expense/approval/reducers
+     */
+    getUniqueHouseNumR(state, action) {
+      return {
+        ...state,
+        uniqueHouseNum: action.payload,
+      };
+    },
+    /**
+     * 费用申请获得费用分组名称
+     * @returns {object} 更新 typeNameList
+     * @memberof module:model/expense/approval~expense/approval/reducers
+     */
+    // TODO: @王晋 删除
+    getTypeNameListR(state, action) {
+      return {
+        ...state,
+        typeNameList: action.payload,
+      };
+    },
+    /**
+     * 费用申请单详情
+     * @returns {object} 更新 orderRecordDetails
+     * @memberof module:model/expense/approval~expense/approval/reducers
+     */
+    reduceorderRecordDetails(state, action) {
+      return { ...state, orderRecordDetails: action.payload };
+    },
+    /**
+     * 审批单列表
+     * @returns {object} 更新 approvalList
+     * @memberof module:model/expense/approval~expense/approval/reducers
+     */
+    // TODO: @王晋 删除
+    getApprovalListR(state, action) {
+      return {
+        ...state,
+        approvalList: action.payload,
+      };
+    },
+    /**
+     * 记录明细列表
+     * @returns {object} 更新 getRecordList
+     * @memberof module:model/expense/approval~expense/approval/reducers
+     */
+    // TODO: @韩健 命名有问题
+    getRecordListR(state, action) {
+      return {
+        ...state,
+        getRecordList: action.payload,
+      };
+    },
+    /**
+     * 获取审批流列表
+     * @returns {object} 更新 examineSimpleNameList
+     * @memberof module:model/expense/approval~expense/approval/reducers
+     */
+    getExamineSimpleNameR(state, action) {
+      return {
+        ...state,
+        examineSimpleNameList: action.payload,
+      };
+    },
+
+    /**
+     * 获取汇总审批单详情
+     * @returns {object} 更新 summaryRecordDetail
+     * @memberof module:model/expense/approval~expense/approval/reducers
+     */
+    reduceSummaryRecordDetail(state, action) {
+      return { ...state, summaryRecordDetail: action.payload };
+    },
+
+    /**
+     * 获取汇总审批单记录
+     * @returns {object} 更新 summaryRecordData
+     * @memberof module:model/expense/approval~expense/approval/reducers
+     */
+    reduceSummaryRecordData(state, action) {
+      return { ...state, summaryRecordData: action.payload };
+    },
+
+    // // 获取汇总审批单进度
+    // reduceSummaryRecordProcess(state, action) {
+    //   return { ...state, summaryRecordProcess: action.payload };
+    // },
+
+    /**
+     * 获取汇总审批单记录
+     * @returns {object} 更新 summaryProcess
+     * @memberof module:model/expense/approval~expense/approval/reducers
+     */
+    reduceSummaryProcess(state, action) {
+      return { ...state, summaryProcess: action.payload };
+    },
+
+    /**
+     * 断租等传id
+     * @returns {object} 更新 recordEdit
+     * @memberof module:model/expense/approval~expense/approval/reducers
+     */
+    recordEditR(state, action) {
+      return {
+        ...state,
+        recordEdit: action.payload,
+      };
+    },
+    /**
+     * 申请单审批
+     * @returns {object} 更新 dispatching
+     * @memberof module:model/expense/approval~expense/approval/reducers
+     */
+    dispatchingR(state, action) {
+      return {
+        ...state,
+        dispatching: action.payload,
+      };
+    },
+  },
+};
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-model_account_exception.html">model/account/exception</a></li><li><a href="module-model_account_manage.html">model/account/manage</a></li><li><a href="module-model_accountInfo.html">model/accountInfo</a></li><li><a href="module-model_admin_manage.html">model/admin/manage</a></li><li><a href="module-model_analysis.html">model/analysis</a></li><li><a href="module-model_application_common.html">model/application/common</a></li><li><a href="module-model_application_core.html">model/application/core</a></li><li><a href="module-model_application_files.html">model/application/files</a></li><li><a href="module-model_application_setting.html">model/application/setting</a></li><li><a href="module-model_application_subscription.html">model/application/subscription</a></li><li><a href="module-model_applicationManage.html">model/applicationManage</a></li><li><a href="module-model_district_manage.html">model/district/manage</a></li><li><a href="module-model_employee_contract.html">model/employee/contract</a></li><li><a href="module-model_employee_manage.html">model/employee/manage</a></li><li><a href="module-model_employee_transport.html">model/employee/transport</a></li><li><a href="module-model_expense_approval.html">model/expense/approval</a></li><li><a href="module-model_expense_borrowingRepaments.html">model/expense/borrowingRepaments</a></li><li><a href="module-model_expense_costOrder.html">model/expense/costOrder</a></li><li><a href="module-model_expense_examineFlow.html">model/expense/examineFlow</a></li><li><a href="module-model_expense_examineOrder.html">model/expense/examineOrder</a></li><li><a href="module-model_expense_houseContract.html">model/expense/houseContract</a></li><li><a href="module-model_expense_subject.html">model/expense/subject</a></li><li><a href="module-model_expense_type.html">model/expense/type</a></li><li><a href="module-model_finance_plan.html">model/finance/plan</a></li><li><a href="module-model_finance_task.html">model/finance/task</a></li><li><a href="module-model_financeFundsConfig.html">model/financeFundsConfig</a></li><li><a href="module-model_financeRulesGenerator.html">model/financeRulesGenerator</a></li><li><a href="module-model_financeSummaryManage.html">model/financeSummaryManage</a></li><li><a href="module-model_inquireModel.html">model/inquireModel</a></li><li><a href="module-model_materials.html">model/materials</a></li><li><a href="module-model_operationManage.html">model/operationManage</a></li><li><a href="module-model_supplier_manage.html">model/supplier/manage</a></li><li><a href="module-model_supply_deductions.html">model/supply/deductions</a></li><li><a href="module-model_supply_details.html">model/supply/details</a></li><li><a href="module-model_supply_distribution.html">model/supply/distribution</a></li><li><a href="module-model_supply_procurement.html">model/supply/procurement</a></li><li><a href="module-model_supply_set.html">model/supply/set</a></li><li><a href="module-model_system.html">model/system</a></li><li><a href="module-model_system_city.html">model/system/city</a></li><li><a href="module-model_system_download.html">model/system/download</a></li><li><a href="module-model_system_manage.html">model/system/manage</a></li><li><a href="module-model_system_recommendedCompany.html">model/system/recommendedCompany</a></li><li><a href="module-model_upload.html">model/upload</a></li><li><a href="module-services_account.html">services/account</a></li><li><a href="module-services_analysis.html">services/analysis</a></li><li><a href="module-services_employee.html">services/employee</a></li><li><a href="module-services_expense.html">services/expense</a></li><li><a href="module-services_expense_borrowingRepayment.html">services/expense/borrowingRepayment</a></li><li><a href="module-services_expense_costOrder.html">services/expense/costOrder</a></li><li><a href="module-services_expense_examineOrder.html">services/expense/examineOrder</a></li><li><a href="module-services_expense_houseContract.html">services/expense/houseContract</a></li><li><a href="module-services_finance.html">services/finance</a></li><li><a href="module-services_finance_funds.html">services/finance/funds</a></li><li><a href="module-services_inquire.html">services/inquire</a></li><li><a href="module-services_login.html">services/login</a></li><li><a href="module-services_salary.html">services/salary</a></li><li><a href="module-services_setting.html">services/setting</a></li><li><a href="module-services_stores.html">services/stores</a></li><li><a href="module-services_system.html">services/system</a></li><li><a href="module-services_system_city.html">services/system/city</a></li><li><a href="module-services_system_recommendedCompany.html">services/system/recommendedCompany</a></li><li><a href="module-services_system_supplier.html">services/system/supplier</a></li><li><a href="module-services_upload.html">services/upload</a></li></ul><h3>Namespaces</h3><ul><li><a href="module-model_account_exception-account_exception_effects.html">account/exception/effects</a></li><li><a href="module-model_account_exception-account_exception_reducers.html">account/exception/reducers</a></li><li><a href="module-model_account_exception-account_exception_subscriptions.html">account/exception/subscriptions</a></li><li><a href="module-model_account_manage-account_manage_effects.html">account/manage/effects</a></li><li><a href="module-model_account_manage-account_manage_reducers.html">account/manage/reducers</a></li><li><a href="module-model_accountInfo-account_accountInfo_effects.html">account/accountInfo/effects</a></li><li><a href="module-model_accountInfo-account_accountInfo_reducers.html">account/accountInfo/reducers</a></li><li><a href="module-model_accountInfo-account_accountInfo_subscriptions.html">account/accountInfo/subscriptions</a></li><li><a href="module-model_admin_manage-admin_manage_effects.html">admin/manage/effects</a></li><li><a href="module-model_admin_manage-admin_manage_reducers.html">admin/manage/reducers</a></li><li><a href="module-model_admin_manage-admin_manage_subscriptions.html">admin/manage/subscriptions</a></li><li><a href="module-model_analysis-analysis_effects.html">analysis/effects</a></li><li><a href="module-model_analysis-analysis_reducers.html">analysis/reducers</a></li><li><a href="module-model_analysis-analysis_subscriptions.html">analysis/subscriptions</a></li><li><a href="module-model_application_common-application_common_effects.html">application/common/effects</a></li><li><a href="module-model_application_common-application_common_reducers.html">application/common/reducers</a></li><li><a href="module-model_application_core-application_core_effects.html">application/core/effects</a></li><li><a href="module-model_application_files-application_files_effects.html">application/files/effects</a></li><li><a href="module-model_application_files-application_files_reducers.html">application/files/reducers</a></li><li><a href="module-model_application_setting-application_setting_effects.html">application/setting/effects</a></li><li><a href="module-model_application_setting-application_setting_reducers.html">application/setting/reducers</a></li><li><a href="module-model_application_subscription-application_subscription_subscriptions.html">application/subscription/subscriptions</a></li><li><a href="module-model_applicationManage-applicationManage_effects.html">applicationManage/effects</a></li><li><a href="module-model_applicationManage-applicationManage_reducers.html">applicationManage/reducers</a></li><li><a href="module-model_district_manage-district_manage_effects.html">district/manage/effects</a></li><li><a href="module-model_district_manage-district_manage_reducers.html">district/manage/reducers</a></li><li><a href="module-model_employee_contract-employee_contract_effects.html">employee/contract/effects</a></li><li><a href="module-model_employee_contract-employee_contract_reducers.html">employee/contract/reducers</a></li><li><a href="module-model_employee_manage-employee_manage_effects.html">employee/manage/effects</a></li><li><a href="module-model_employee_manage-employee_manage_reducers.html">employee/manage/reducers</a></li><li><a href="module-model_employee_transport-employee_transport_effects.html">employee/transport/effects</a></li><li><a href="module-model_employee_transport-employee_transport_reducers.html">employee/transport/reducers</a></li><li><a href="module-model_expense_approval-expense_approval_effects.html">expense/approval/effects</a></li><li><a href="module-model_expense_approval-expense_approval_reducers.html">expense/approval/reducers</a></li><li><a href="module-model_expense_approval-expense_approval_subscriptions.html">expense/approval/subscriptions</a></li><li><a href="module-model_expense_borrowingRepaments-expense_borrowingRepayment_effects.html">expense/borrowingRepayment/effects</a></li><li><a href="module-model_expense_borrowingRepaments-expense_costOrder_reducers.html">expense/costOrder/reducers</a></li><li><a href="module-model_expense_costOrder-expense_costOrder_effects.html">expense/costOrder/effects</a></li><li><a href="module-model_expense_costOrder-expense_costOrder_reducers.html">expense/costOrder/reducers</a></li><li><a href="module-model_expense_examineFlow-expense_examineFlow_effects.html">expense/examineFlow/effects</a></li><li><a href="module-model_expense_examineFlow-expense_examineFlow_reducers.html">expense/examineFlow/reducers</a></li><li><a href="module-model_expense_examineOrder-expense_examineOrder_effects.html">expense/examineOrder/effects</a></li><li><a href="module-model_expense_examineOrder-expense_examineOrder_reducers.html">expense/examineOrder/reducers</a></li><li><a href="module-model_expense_houseContract-expense_houseContract_effects.html">expense/houseContract/effects</a></li><li><a href="module-model_expense_houseContract-expense_houseContract_reducers.html">expense/houseContract/reducers</a></li><li><a href="module-model_expense_houseContract-expense_houseContract_subscriptions.html">expense/houseContract/subscriptions</a></li><li><a href="module-model_expense_subject-expense_subject_effects.html">expense/subject/effects</a></li><li><a href="module-model_expense_subject-expense_subject_reducers.html">expense/subject/reducers</a></li><li><a href="module-model_expense_subject-expense_subject_subscriptions.html">expense/subject/subscriptions</a></li><li><a href="module-model_expense_type-expense_type_effects.html">expense/type/effects</a></li><li><a href="module-model_expense_type-expense_type_reducers.html">expense/type/reducers</a></li><li><a href="module-model_finance_plan-finance_plan_effects.html">finance/plan/effects</a></li><li><a href="module-model_finance_plan-finance_plan_reducers.html">finance/plan/reducers</a></li><li><a href="module-model_finance_task-finance_task_effects.html">finance/task/effects</a></li><li><a href="module-model_finance_task-finance_task_reducers.html">finance/task/reducers</a></li><li><a href="module-model_financeFundsConfig-financeFundsConfig_effects.html">financeFundsConfig/effects</a></li><li><a href="module-model_financeFundsConfig-financeFundsConfig_reducers.html">financeFundsConfig/reducers</a></li><li><a href="module-model_financeRulesGenerator-financeRulesGenerator_effects.html">financeRulesGenerator/effects</a></li><li><a href="module-model_financeRulesGenerator-financeRulesGenerator_reducers.html">financeRulesGenerator/reducers</a></li><li><a href="module-model_financeSummaryManage-financeSummaryManage_effects.html">financeSummaryManage/effects</a></li><li><a href="module-model_financeSummaryManage-financeSummaryManage_reducers.html">financeSummaryManage/reducers</a></li><li><a href="module-model_financeSummaryManage-financeSummaryManage_subscriptions.html">financeSummaryManage/subscriptions</a></li><li><a href="module-model_inquireModel-inquireModel_effects.html">inquireModel/effects</a></li><li><a href="module-model_inquireModel-inquireModel_reducers.html">inquireModel/reducers</a></li><li><a href="module-model_materials-financeConfigIndex_effects.html">financeConfigIndex/effects</a></li><li><a href="module-model_materials-financeConfigIndex_reducers.html">financeConfigIndex/reducers</a></li><li><a href="module-model_materials-financeConfigTags_effects.html">financeConfigTags/effects</a></li><li><a href="module-model_materials-financeConfigTags_reducers.html">financeConfigTags/reducers</a></li><li><a href="module-model_materials-financeFundsManage_effects.html">financeFundsManage/effects</a></li><li><a href="module-model_materials-financeFundsManage_reducers.html">financeFundsManage/reducers</a></li><li><a href="module-model_materials-materials_effects.html">materials/effects</a></li><li><a href="module-model_materials-materials_reducers.html">materials/reducers</a></li><li><a href="module-model_materials-materials_subscriptions.html">materials/subscriptions</a></li><li><a href="module-model_operationManage-operationManage_effects.html">operationManage/effects</a></li><li><a href="module-model_operationManage-operationManage_reducers.html">operationManage/reducers</a></li><li><a href="module-model_supplier_manage-supplier_manage_effects.html">supplier/manage/effects</a></li><li><a href="module-model_supplier_manage-supplier_manage_reducers.html">supplier/manage/reducers</a></li><li><a href="module-model_supply_deductions-supply_deductions_effects.html">supply/deductions/effects</a></li><li><a href="module-model_supply_deductions-supply_deductions_reducers.html">supply/deductions/reducers</a></li><li><a href="module-model_supply_deductions-supply_deductSummarize_effects.html">supply/deductSummarize/effects</a></li><li><a href="module-model_supply_deductions-supply_deductSummarize_reducers.html">supply/deductSummarize/reducers</a></li><li><a href="module-model_supply_details-supply_details_effects.html">supply/details/effects</a></li><li><a href="module-model_supply_details-supply_details_reducers.html">supply/details/reducers</a></li><li><a href="module-model_supply_distribution-supply_distribution_effects.html">supply/distribution/effects</a></li><li><a href="module-model_supply_distribution-supply_distribution_reducers.html">supply/distribution/reducers</a></li><li><a href="module-model_supply_procurement-supply_procurement_effects.html">supply/procurement/effects</a></li><li><a href="module-model_supply_procurement-supply_procurement_reducers.html">supply/procurement/reducers</a></li><li><a href="module-model_supply_set-supply_set_effects.html">supply/set/effects</a></li><li><a href="module-model_supply_set-supply_set_reducers.html">supply/set/reducers</a></li><li><a href="module-model_system_city-system_city_effects.html">system/city/effects</a></li><li><a href="module-model_system_city-system_city_reducers.html">system/city/reducers</a></li><li><a href="module-model_system_download-system_download_effects.html">system/download/effects</a></li><li><a href="module-model_system_download-system_download_reducers.html">system/download/reducers</a></li><li><a href="module-model_system_manage-system_manage_effects.html">system/manage/effects</a></li><li><a href="module-model_system_manage-system_manage_reducers.html">system/manage/reducers</a></li><li><a href="module-model_system_recommendedCompany-system_recommendedCompany_effects.html">system/recommendedCompany/effects</a></li><li><a href="module-model_system_recommendedCompany-system_recommendedCompany_reducers.html">system/recommendedCompany/reducers</a></li><li><a href="module-model_system-system_effects.html">system/effects</a></li><li><a href="module-model_system-system_reducers.html">system/reducers</a></li><li><a href="module-model_system-system_subscriptions.html">system/subscriptions</a></li><li><a href="module-model_upload-upload_effects.html">upload/effects</a></li><li><a href="module-model_upload-upload_reducers.html">upload/reducers</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sun Apr 28 2019 11:25:15 GMT+0800 (CST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

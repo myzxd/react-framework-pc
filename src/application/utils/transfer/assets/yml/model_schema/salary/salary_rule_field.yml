@@ -1,0 +1,20 @@
+1.单量提成页面
+
+订单类型: order_type (多选)
+    枚举值: 1:全部, 2:平台单, 3:外单, 4:跑腿单
+骑士分类: knight_type
+    枚举值: 1:新奇骑士, 2:老骑士, 3:不区分
+骑士标签: knight_tags (请求接口)
+当月在离职: state
+    枚举值: 1:全部, 2:当月在职, 3:当月离职, 4:不区分
+站点评星: station_level
+#——————————————————
+方案提成类型: extract_type
+    枚举值: 1: 阶梯分段提成 2:阶梯变动提成
+[  开始单量         比较项            比较类型              结束单量       区间内每单值
+  {start_order: 0, compare_item: 1, compare_type: '<=', end_order: 0, value: 100},
+  {start_order: 0, compare_item: 1, compare_type: '<=', end_order: 0, value: 100},
+  {start_order: 0, compare_item: 1, compare_type: '<=', end_order: 0, value: 100},
+]
+
+2.

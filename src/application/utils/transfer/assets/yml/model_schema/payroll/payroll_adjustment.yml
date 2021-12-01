@@ -1,0 +1,337 @@
+- name: payroll_adjustment_configuration
+  description: 结算单调整项(扣款补款)配置
+  schema:
+  - name: _id
+    type: ObjectId
+    note: _id
+    required: true
+  - name: supplier_id
+    type: ObjectId
+    note: 供应商ID
+    required: false
+  - name: platform_code
+    type: string
+    note: 平台code
+    required: true
+  - name: group
+    type: int
+    note: 款项组分类
+    required: true
+  - name: lines
+    type: list
+    note: '扣补款项目集[{_id:ObjectId, weight:1}]'
+    required: false
+  - name: created_at
+    type: datetime
+    note: 创建时间
+    required: true
+
+- name: payroll_adjustment_item
+  description: 结算单调整项(扣款补款)项目
+  schema:
+  - name: _id
+    type: ObjectId
+    note: _id
+    required: true
+  - name: supplier_id
+    type: ObjectId
+    note: 供应商id
+    required: false
+  - name: identifier
+    type: string
+    note: 编号
+    required: true
+  - name: name
+    type: string
+    note: 名称
+    required: true
+  - name: definition
+    type: string
+    note: 定义
+    required: false
+  - name: operator_id
+    type: ObjectId
+    note: 操作人id
+    required: true
+  - name: template_id
+    type: ObjectId
+    note: 模版ID
+    required: false
+  - name: state
+    type: int
+    note: 状态(启用100,禁用-100)
+    required: true
+  - name: platform_code
+    type: string
+    note: 平台code
+    required: true
+  - name: group
+    type: int
+    note: '款项组(人员扣款11001, 人员补款 11002, 人事扣款 11003, 人事补款 11004)'
+    required: true
+  - name: created_at
+    type: datetime
+    note: 创建时间
+    required: true
+  - name: updated_at
+    type: datetime
+    note: 更新时间
+    required: true
+  relations:
+    ref_fields:
+      operator_info:
+      - operator_id
+      - Account
+
+
+- name: payroll_adjustment_data_template
+  description: 结算单调整项(扣款补款)数据模板
+  schema:
+  - name: _id
+    type: ObjectId
+    note: _id
+    required: string
+  - name: supplier_id
+    type: ObjectId
+    note: 供应商id
+    required: false
+  - name: platform_code
+    type: string
+    note: 平台code
+    required: true
+  - name: version
+    type: string
+    note: 版本号
+    required: true
+  - name: group
+    type: int
+    note: '款项组(人员扣款11001, 人员补款 11002, 人事扣款 11003, 人事补款 11004)'
+    required: true
+  - name: created_at
+    type: datetime
+    note: 创建时间
+    required: true
+
+
+- name: payroll_adjustment_task
+  description: 结算单调整项(扣款补款)数据上传任务
+  schema:
+  - name: _id
+    type: ObjectId
+    note: _id
+    required: true
+  - name: supplier_id
+    type: ObjectId
+    note: 供应商id
+    required: false
+  - name: platform_code
+    type: string
+    note: 平台code
+    required: true
+  - name: city_code
+    type: string
+    note: 城市code
+    required: false
+  - name: biz_district_id
+    type: ObjectId
+    note: 商圈id
+    required: false
+
+  - name: payroll_plan_id
+    type: ObjectId
+    note: 服务费计划id
+    required: true
+
+  - name: payroll_plan_cycle_no
+    type: int
+    note: 服务费计划周期ID
+    required: true
+
+  - name: payroll_statement_id
+    type: ObjectId
+    note: 服务费总账单
+    required: true
+
+
+  - name: fund_flag
+    type: bool
+    note: 款项标示(true无款项)
+    required: false
+  - name: active_flag
+    type: bool
+    note: 待处理标示(true待处理)
+    required: false
+
+  - name: position_id
+    type: integer
+    note: '职位(1003:总监,1004:城市经理,1005:助理,1006:调度,1007:站长,1009:骑士长,1010:骑士)'
+    required: true
+
+  - name: work_type
+    type: int
+    note: 工作性质
+    required: true
+  - name: state
+    type: int
+    note: 状态
+    required: true
+  - name: operator_id
+    type: ObjectId
+    note: 操作人id
+    required: false
+  - name: start_date
+    type: int
+    note: 起始日期
+    required: true
+  - name: end_date
+    type: int
+    note: 结束日期
+    required: true
+
+  - name: created_at
+    type: datetime
+    note: 创建时间
+    required: true
+  - name: submited_at
+    type: datetime
+    note: 提交时间
+    required: false
+    default: None
+  - name: updated_at
+    type: datetime
+    note: 更新时间
+    required: true
+
+  - name: file_key
+    type: string
+    note: 文件key
+    required: false
+
+  - name: storage_type
+    type: int
+    note: 储存模式(七牛)
+    required: false
+
+  - name: option_flag
+    type: bool
+    note: 操作标示(true可操作,false不可操作 )
+    required: false
+
+  - name: err_data
+    type: list
+    note: 错误信息
+    required: false
+  - name: group
+    type: int
+    note: '款项组(人员扣款11001, 人员补款 11002, 人事扣款 11003, 人事补款 11004)'
+    required: true
+  extra_schema:
+    operator_info:
+      field_type: 'ref'
+      meta:
+        - operator_id
+        - Account
+    auditor_info:
+      field_type: 'ref'
+      meta:
+        - auditor_id
+        - Account
+    biz_district_info:
+      field_type: 'ref'
+      meta:
+        - biz_district_id
+        - BizDistrict
+    salary_compute_cycle_info:
+      field_type: 'ref'
+      meta:
+        - salary_compute_cycle_id
+        - SalaryComputeCycle
+
+- name: salary_payroll_adjustment_line
+  description: 人员扣款补款明细数据
+  schema:
+  - name: _id
+    type: ObjectId
+    note: _id
+    required: string
+  - name: supplier_id
+    type: ObjectId
+    note: 供应商id
+    required: false
+  - name: platform_code
+    type: string
+    note: 平台code
+    required: true
+  - name: city_code
+    type: string
+    note: 城市code
+    required: false
+  - name: biz_district_id
+    type: ObjectId
+    note: 商圈id
+    required: false
+
+  - name: task_id
+    type: ObjectId
+    note: 任务id
+    required: true
+
+  - name: payroll_plan_id
+    type: ObjectId
+    note: 服务费计划id
+    required: true
+
+  - name: payroll_statement_id
+    type: ObjectId
+    note: 服务费总账单
+    required: true
+
+  - name: staff_id
+    type: ObjectId
+    note: 人员id
+    required: true
+
+  - name: id_card_num
+    type: string
+    note: 身份证号
+    required: true
+
+  - name: items
+    type: list
+    note: 扣补款项目集
+    required: true
+    # {"value": int,
+    # "reason": string,
+    # "name": sting,
+    # "_id": ObjectId
+    # "row_num": int,}
+  - name: belong_time
+    type: int
+    note: 归属日期
+    required: true
+  - name: start_date
+    type: int
+    note: 起始日期
+    required: true
+  - name: end_date
+    type: int
+    note: 结束日期
+    required: true
+
+  - name: payroll_cycle_type
+    type: int
+    note: '结算周期类型(1:按月，2:按日)'
+    required: true
+  - name: position_id
+    type: int
+    note: 职位
+    required: true
+  - name: group
+    type: int
+    note: '款项组(人员扣款11001, 人员补款 11002, 人事扣款 11003, 人事补款 11004)'
+    required: true
+
+  - name: created_at
+    type: datetime
+    note: 创建时间
+    required: true

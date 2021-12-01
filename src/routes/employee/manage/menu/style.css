@@ -1,0 +1,77 @@
+/* 人员管理员工档案公共详情操作样式 */
+.app-comp-employee-manage-menu-common-line-operation-detail {
+  margin-right: 10px;
+}
+
+/* 人员管理员工档案公共编辑操作样式 */
+.app-comp-employee-manage_menu-common-line-operation-update {
+  margin-right: 10px;
+}
+
+/* 人员管理员工档案公共离职操作内容样式 */
+.app-comp-employee-manage-menu-common-line-operation-termination-text {
+  margin-right: 10px;
+}
+
+/* 人员管理员工档案公共离职操作内容样式 */
+.app-comp-employee-manage-menu-common-line-operation-termination {
+  margin-right: 30px;
+}
+
+/* 人员管理员工档案劳动者编码 */
+.app-comp-employee-manage-menu-second-line-coding {
+  word-break: break-all !important;
+}
+
+/* 人员管理员工档案劳动者编码 */
+.boss_employee_manage_menu_second_line_coding {
+  word-break: break-all !important;
+}
+
+/* 人员管理员工档案员工搜索 */
+.boss_employee_manage_menu_staff_search {
+  padding: 16px !important;
+  margin: 10px 0 16px !important;
+  background-color: #FAFAFA !important;
+}
+
+.commonLineOperateBtn {
+  margin-right: 10px;
+}
+
+.firstSearchRecruitmentChannelSelector {
+  width: 100%;
+}
+
+.secondSearchRecruitmentChannelSelector {
+  width: 100%;
+}
+
+.alert-info {
+  margin-bottom: 10px;
+}
+
+.resign-title {
+  font-size: 16px;
+  margin-bottom: 15px;
+}
+.resign-titleExt {
+  color: #FF7700;
+}
+.resign-jobRecipient {
+  margin-right: 20px;
+}
+.resign-innerbox {
+  margin-top: 15px;
+}
+
+/* 变更team title */
+.employee-change-team-title {
+  font-size: 14;
+  font-weight: 500;
+}
+
+/* 变更team note */
+.employee-change-team-note {
+  font-weight: 300;
+}

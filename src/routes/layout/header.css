@@ -1,0 +1,250 @@
+/* 头部组件样式 */
+.app-header-box {
+  height: 64px;
+  overflow: hidden;
+  text-align: center;
+  line-height: 64px;
+  align-items: center;
+  padding-right: 40px;
+}
+
+/* 头部组件趣活标题样式 */
+.app-header-title-quhuo {
+  float: left;
+  text-align: center;
+  vertical-align: middle;
+  color: #ffffff;
+  font-size: 18px;
+  padding: 0 20px;
+  position: relative;
+  background: #E86000;
+  padding: 0px 22px;
+  cursor: pointer;
+}
+
+/* 头部组件aoao标题样式 */
+.app-header-title-aoao {
+  float: left;
+  text-align: center;
+  vertical-align: middle;
+  color: #ffffff;
+  font-size: 16px;
+  background: #E86000;
+  padding: 0px 22px;
+  cursor: pointer;
+}
+
+/* 头部组件标题信息样式 */
+.app-header-title-beta {
+  float: left;
+  text-align: center;
+  vertical-align: middle;
+  color: #ffffff;
+  background-color: #D0021B;
+  padding: 0px 10px;
+  font-size: 16px;
+  margin-left: 10px;
+}
+
+/* 头部组件标题文案样式 */
+.app-header-title-quhuo-text {
+  position: absolute;
+  top: -2px;
+  right: 8px;
+}
+
+/* 头部系统切换按钮样式 */
+.app-header-system-switch-button {
+  margin-right: 20px !important;
+}
+
+/* 头部账号切换文案样式 */
+.app-header-account-selector-text {
+  color: black !important;
+}
+
+/* 头部账号切换信息样式 */
+.app-header-account-selector-info {
+  color: black !important;
+}
+
+/* 头部账号切换信息文字样式 */
+.app-header-account-selector-info-text {
+  color: #FF7700 !important;
+}
+
+/* 头部账号切换信息背景色样式 */
+.app-header-account-selector-info-background {
+  /* background-color: #FF7700 !important; */
+}
+
+/* 头部下拉菜单点击字体样式 */
+.app-header-down-menu-click {
+  color: #000 !important;
+}
+
+/* 头部下拉菜单文字距离样式 */
+.app-header-down-menu-exit {
+  margin-left: 8px !important;
+}
+
+/* 头部下拉菜单用户获取失败样式 */
+.app-header-down-menu-user-failure {
+  margin: 0px 5px 0px 20px !important;
+  color: white !important;
+}
+
+/* 头部下拉菜单用户获取失败icon样式 */
+.app-header-down-menu-user-failure-icon {
+  color: white !important;
+}
+
+/* 头部二维码样式 */
+.app-header-qr-code {
+  float: right;
+  margin-right: 40px;
+  color: white;
+  font-size: 20px;
+}
+
+/* 头部任务列表样式 */
+.app-header-task-list {
+  float: right;
+  margin-right: 40px;
+  color: white;
+  font-size: 20px;
+}
+
+.app-header-help-center{
+  float: right;
+  margin-right: 40px;
+  color: white;
+  font-size: 20px;
+}
+.app-header-help-center a{
+  color: white;
+}
+
+/* 下拉样式 */
+.app-header-drop-down-menu {
+  float: right;
+  margin-right: 40px;
+}
+
+/***********************************************/
+/* 导航栏样式，样式修改要注意，需要同步修改老板和之家系统 */
+.app-nav-menu {
+  float: left;
+  padding: 0 20px;
+}
+
+/* 样式修改要注意，需要同步修改老板和之家系统 */
+.app-nav-menu-active{
+  float: left;
+  padding: 0 20px;
+  background: url('../../static/header_menu_bg.png');
+  background-repeat: no-repeat;
+  background-position: bottom;
+  background-size: contain;
+}
+
+/* 样式修改要注意，需要同步修改老板和之家系统 */
+.app-nav-menu-button {
+  font-size: 14px;
+  color: #FFFFFF;
+  width: 140px;
+  cursor: pointer;
+}
+
+/* 样式修改要注意，需要同步修改老板和之家系统 */
+.app-nav-menu-button-active {
+  font-size: 14px;
+  color: #FD7800;
+  width: 140px;
+  cursor: pointer;
+}
+
+/* 样式修改要注意，需要同步修改老板和之家系统 */
+.app-nav-menu-container {
+  position: absolute;
+  width: 100%;
+  left: 0px;
+  z-index: 2000;
+  height: 100%;
+  background-color: rgba(1, 1, 1, 0.5);
+  min-width: 1280px;
+}
+
+/* 样式修改要注意，需要同步修改老板和之家系统 */
+.app-nav-menu-content-container {
+  background-color: white;
+  height: auto;
+}
+
+/* 样式修改要注意，需要同步修改老板和之家系统 */
+.app-nav-menu-group {
+  padding-bottom: 8px;
+}
+
+/* 样式修改要注意，需要同步修改老板和之家系统 */
+.app-nav-menu-group-title {
+  font-size: 12px;
+  color: rgba(0, 20, 41, 0.4);
+  padding: 30px 40px 10px;
+  text-align: left;
+  line-height: 12px
+}
+
+/* 样式修改要注意，需要同步修改老板和之家系统 */
+.app-nav-menu-group-content {
+  background-color: white;
+}
+
+/* 样式修改要注意，需要同步修改老板和之家系统 */
+.app-nav-menu-title{
+  font-size: 12px;
+  color: #001429;
+  line-height: 12px;
+  text-align: left;
+  margin-left: 40px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid #ECECEC;
+  line-height: 35px;
+}
+
+/* 样式修改要注意，需要同步修改老板和之家系统 */
+.app-nav-menu-link{
+  font-size: 12px;
+  color: rgba(0, 20, 41, 0.65);
+  text-align: left;
+  margin-left: 35px;
+  padding-left: 5px;
+  line-height: 35px;
+}
+
+/* 样式修改要注意，需要同步修改老板和之家系统 */
+.app-nav-menu-link a {
+  color: rgba(0, 20, 41, 0.65);
+}
+
+/* 样式修改要注意，需要同步修改老板和之家系统 */
+.app-nav-menu-link-selected{
+  color: #FD7800;
+}
+
+/* 样式修改要注意，需要同步修改老板和之家系统 */
+.app-nav-menu-link:hover{
+  color: rgba(0, 20, 41, 0.9);
+  background-color: #F5F5F5;
+  background-image: url('../../static/header-menu-link-after.png');
+  background-position: right 8px top 14px;
+  background-repeat: no-repeat;
+  background-size: 8px;
+}
+
+:global .ant-dropdown-menu-item-group-list {
+  margin: 0 !important;
+  max-height: 320px;
+  overflow-y: scroll;
+}
+/***********************************************/

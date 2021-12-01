@@ -1,0 +1,151 @@
+- module: 'payroll_adjustment_task'
+  apis:
+  - api_ns: 'payroll_adjustment_task'
+    cmd_list:
+      - summary: 扣补款统计
+        description: '对应UI页:扣补款管理页小红点及数量汇总'
+        cmd: get_red_point
+        params:
+          - name: platform_code
+            type: string
+            required: false
+            note: '平台code'
+            enum_values: ''
+        result: {}
+        param_example:
+          platform_code: 'elem'
+        result_example:
+          group: 11001
+          state: 100
+          count: [20, 30, 20]
+          flag: [true, true, false, true]
+
+      - summary: 扣补款任务列表
+        description: '对应UI页:扣补款管理页列表'
+        cmd: find
+        params:
+          - name: platform_code
+            type: '[string]'
+            required: false
+            note: '平台code'
+            enum_values: ''
+          - name: supplier_ids
+            type: '[object_id]'
+            required: false
+            note: '供应商id'
+            enum_values: ''
+          - name: city_code
+            type: '[string]'
+            required: false
+            note: '城市code'
+            enum_values: ''
+          - name: biz_district_ids
+            type: '[object_id]'
+            required: false
+            note: '商圈ids'
+            enum_values: ''
+          - name: group
+            type: int
+            required: true
+            note: '款项组(11001:骑士补款,11002:骑士扣款,11003:人事补款,11004:人事扣款)'
+            enum_values: ''
+          - name: state
+            type: '[int]'
+            required: false
+            note: '状态'
+            enum_values: ''
+        result:
+          type: 'api_result_set_with_meta'
+          schema: 'payroll_adjustment_task_list_item'
+        param_example:
+          platform_code: 'elem'
+          supplier_ids: ['5a655eaace6d2a430f748f82', '5a655eaace6d2a430f748f82']
+          city_spelling_list: 'beijing'
+          biz_district_ids: ['5a655eaace6d2a430f748f82', '5a655eaace6d2a430f748f82']
+          group: [11001, 11002]
+          state: [100, 50]
+        result_example:
+          _id: '5a655eaace6d2a430f748f82'
+          work_type: 3001
+          salary_cycle_type: 1
+          biz_district_id: '5a655eaace6d2a430f748f82'
+          start_date: '2018-10-10'
+          end_date: '2018-11-11'
+          group: 11001
+          state: 100
+          month_date: '2018-10'
+          error_data: '校验失败'
+
+      - summary: 扣补款标记无款项
+        description: '对应UI页:扣补款管理页无款项按钮'
+        cmd: mark_no_money
+        params:
+          - name: ids
+            type: '[object_id]'
+            required: true
+            note: '主键id'
+            enum_values: ''
+        params_schema: 'detail_data'
+        result: {}
+        param_example:
+          _id: '5a655eaace6d2a430f748f82'
+        result_example:
+          ok: true
+          _id: '5a655eaace6d2a430f748f82'
+
+      - summary: 扣补款上传
+        description: 对应UI页:扣补款管理页上传文件按钮
+        cmd: upload_data_file
+        params:
+          - name: task_id
+            type: string
+            required: true
+            note: '扣补款任务id'
+            enum_values: ''
+          - name: file_key
+            type: string
+            required: true
+            note: '文件key'
+            enum_values: ''
+        result: {}
+        param_example:
+          _id: '5a655eaace6d2a430f748f82'
+          file_key: '5a655eaace6d2a430f748f82.xlsx'
+        result_example:
+          ok: true
+          _id: '5a655eaace6d2a430f748f82'
+
+      - summary: 扣补款模版下载
+        description: '对应UI页:扣补款管理页下载模板按钮'
+        cmd: download_template
+        params:
+          - name: platform_code
+            type: string
+            required: true
+            note: '平台code'
+            enum_values: ''
+          - name: city_code
+            type: string
+            required: true
+            note: '城市code'
+            enum_values: ''
+          - name: biz_district_id
+            type: object_id
+            required: true
+            note: '商圈id'
+            enum_values: ''
+          - name: group
+            type: int
+            required: true
+            note: '款项组(11001:骑士补款,11002:骑士扣款,11003:人事补款,11004:人事扣款)'
+            enum_values: ''
+        result: {}
+        param_example:
+          platform_code: 'elem'
+          city_code: 'beijing'
+          biz_district_id: '5a655eaace6d2a430f748f82'
+          group: 11001
+        result_example:
+          ok: true
+          _id: '5a655eaace6d2a430f748f82'
+

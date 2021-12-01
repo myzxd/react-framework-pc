@@ -1,0 +1,35 @@
+/* 红冲单操作容器布局样式 */
+.app-comp-expense-invoiceAdjust-operate-wrap {
+  padding: 20px 0 20px;
+  text-align: center;
+}
+
+/* 红冲单创建完成操作样式 */
+.app-comp-expense-invoiceAdjust-operate-done {
+  margin-left: 20px;
+}
+
+/* 费用单详情文件样式 */
+.app-comp-expense-manage-template-detail-refund-file {
+  margin-right: 10px !important;
+}
+
+/* 红冲费用单操作样式 */
+.app-comp-expense-manage-invoiceAdjust-cost-operate {
+  padding: 10px 0 20px;
+  text-align: center;
+}
+
+/* 红冲费用单样式 */
+.app-comp-expense-manage-invoiceAdjust-cost-wrap {
+  border-top: 3px dashed #ccc;
+  background-color: rgba(253, 245, 246, 1);
+}
+
+/* 红冲费用单title样式 */
+.app-comp-expense-manage-invoiceAdjust-cost-title {
+  margin-top: 10px;
+  text-align: center;
+  height: 40px;
+  line-height: 40px;
+}

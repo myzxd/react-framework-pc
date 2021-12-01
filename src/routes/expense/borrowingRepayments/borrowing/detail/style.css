@@ -1,0 +1,10 @@
+/* 借款信息文件 */
+.app-comp-expense-borrowing-info-file {
+  margin-right: 10px !important;
+}
+
+
+/* 还款信息备注 */
+.app-comp-expense-borrowing-repayments-info-not {
+  width: 300px !important;
+}

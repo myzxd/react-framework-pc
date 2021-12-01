@@ -1,0 +1,1445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: models/finance/generator.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: models/finance/generator.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * 薪资设置-薪资规则生成 model
+ *
+ * @module model/financeRulesGenerator
+ */
+import is from 'is_js';
+
+import {
+  Unit,
+  FinanceRulesGeneratorStep,
+  FinanceQualityAwardType,
+  FinanceQualityAwardOrPunish,
+  SalaryExtractType,
+  FinanceQualityType,
+  FinanceSalaryMeetConditions,
+  FinanceSalaryManagementType,
+  SalaryExtractListType,
+  SalaryOrderType,
+  SalaryRulesLadderCalculateType,
+} from '../../application/define';
+
+import {
+  fetchGeneratorOrderTypes,
+  fetchRulesGeneratorList,
+  updateFinanceRuleSort,
+  deleteFinanceRulesGeneratorList,
+  createFinanceRulesGeneratorListOne,
+  createFinanceRulesGenerator,
+  updateRulesGeneratorByState,
+  createRulesGeneratorSteps,
+} from '../../services/finance';
+
+import { SalaryRuleListItem, SalaryVar } from '../../application/object/salary/test';
+
+
+// 校验/转换payload到提交服务器params的方法集
+const transferPayload = {
+  // 创建薪资规则第一步，单量
+  createRulesFirst: (payload) => {
+    const params = {
+      payroll_mark: '',  // 薪资单对应列
+      match_filters: {},
+      compute_logic: {
+        biz_logic: ['order_logic_range'], // 阶梯分段|阶梯变动
+        params: {
+          total_max_num: 0,
+        },
+      },
+    };
+    // step
+    if (is.not.empty(payload.step) &amp;&amp; is.existy(payload.step)) {
+      params.collection_cate = payload.step;
+    } else {
+      throw new Error('step is required');
+    }
+    // ruleCollectionId
+    if (is.not.empty(payload.ruleCollectionId) &amp;&amp; is.existy(payload.ruleCollectionId)) {
+      params.rule_collection_id = payload.ruleCollectionId;
+    } else {
+      throw new Error('ruleCollectionId is required');
+    }
+    // 薪资指标
+    if (is.not.empty(payload.orderType) &amp;&amp; is.existy(payload.orderType)) {
+      params.match_filters.order_type = [payload.orderType];
+    }
+    // 骑士分类
+    if (is.not.empty(payload.knightType) &amp;&amp; is.existy(payload.knightType)) {
+      params.match_filters.knight_type = payload.knightType.map(item => Number(item));
+    }
+    // 骑士标签
+    if (is.not.empty(payload.knightTags) &amp;&amp; is.existy(payload.knightTags)) {
+      params.match_filters.knight_tags = payload.knightTags.map((item) => {
+        if (`${item}` === `${SalaryOrderType.all}`) {
+          return String(item);
+        }
+        return item;
+      });
+    }
+    // 当月在离职
+    if (is.not.empty(payload.state) &amp;&amp; is.existy(payload.state)) {
+      params.match_filters.state = payload.state.map(item => Number(item));
+    }
+    // 站点星级
+    if (is.not.empty(payload.stationLevel) &amp;&amp; is.existy(payload.stationLevel)) {
+      params.match_filters.station_level = payload.stationLevel.map(item => Number(item));
+    }
+    // 方案提成
+    if (is.not.empty(payload.type) &amp;&amp; is.existy(payload.type)) {
+      params.compute_logic.params.type = Number(payload.type);
+    }
+    // 单量规则
+    if (is.not.empty(payload.rangeTable) &amp;&amp; is.existy(payload.rangeTable)) {
+      const rangeTable = payload.rangeTable.map((item) => {
+        const newItem = {
+          min: Number(item.min),
+          symbol_min: item.symbolMin,
+          index: payload.orderType,
+          symbol_max: item.symbolMax,
+          max: item.max,
+          unit_amount: Number(item.unitAmount),
+          money: Number(Unit.exchangePriceToCent(item.money)),
+          min_money: 0,
+        };
+        return newItem;
+      });
+      params.compute_logic.params.range_table = rangeTable;
+    }
+    // 薪资单对应列
+    if (is.not.empty(payload.payrollMark) &amp;&amp; is.existy(payload.payrollMark)) {
+      params.payroll_mark = payload.payrollMark;
+    }
+    return params;
+  },
+  // 创建薪资规则第二步，出勤
+  createRulesSecond: (payload) => {
+    const params = {};
+    const matchFilters = {};
+    const computeLogic = {};
+    const byOnceParams = {
+      auto_inc_option: payload.autoIncOption, // 是否补贴
+      auto_dec_option: payload.autoDecOption, // 是否扣款
+    }; // 总额补贴
+    const byOrderUnitParams = {}; // 按单补贴
+    const bySalaryBaseParams = {}; // 底薪补贴
+    // 薪资规则集id
+    if (is.existy(payload.ruleCollectionId) &amp;&amp; is.not.empty(payload.ruleCollectionId)) {
+      params.rule_collection_id = payload.ruleCollectionId;
+    }
+    // 步骤
+    if (is.existy(payload.step) &amp;&amp; is.not.empty(payload.step)) {
+      params.collection_cate = payload.step;
+    }
+    // 骑士分类
+    if (is.not.empty(payload.knightType) &amp;&amp; is.existy(payload.knightType)) {
+      matchFilters.knight_type = payload.knightType.map(item => Number(item));
+    }
+    // 骑士标签
+    if (is.not.empty(payload.knightTags) &amp;&amp; is.existy(payload.knightTags)) {
+      matchFilters.knight_tags = payload.knightTags;
+    }
+    // 当月在离职
+    if (is.not.empty(payload.state) &amp;&amp; is.existy(payload.state)) {
+      matchFilters.state = payload.state.map(item => Number(item));
+    }
+    // 满足条件
+    if (is.not.empty(payload.orderVars) &amp;&amp; is.existy(payload.orderVars)) {
+      // const rules = payload.orderVars.rules.map(item => Unit.exchangePriceToCent(item));
+      matchFilters.order_vars = {
+        match_type: payload.orderVars.matchType,
+        type: 'compose',
+      };
+      // 总额补贴
+      if ((is.not.empty(payload.orderVars.rules) &amp;&amp; is.existy(payload.orderVars.rules)) &amp;&amp;
+      (is.not.empty(payload.orderVars.rules[0]) &amp;&amp; is.existy(payload.orderVars.rules[0]))) {
+        matchFilters.order_vars.rules = payload.orderVars.rules.map((v) => {
+          return {
+            index: v.index,   // 指标
+            symbol: v.symbol,  // 比较符
+            num: Unit.dynamicExchange(v.num, v.unit), // 指标量
+          };
+        });
+      }
+    }
+    // 总额补贴
+    if (is.not.empty(payload.bizLogic) &amp;&amp; is.existy(payload.bizLogic)) {
+      computeLogic.biz_logic = Array.isArray(payload.bizLogic) ? payload.bizLogic : [payload.bizLogic];
+    }
+    // 一次性补贴
+    if (is.not.empty(payload.onceMoney) &amp;&amp; is.existy(payload.onceMoney)) {
+      byOnceParams.once_money = Unit.exchangePriceToCent(payload.onceMoney);
+    }
+    // 奖罚金额指标
+    if (is.not.empty(payload.unitIndex) &amp;&amp; is.existy(payload.unitIndex)) {
+      byOnceParams.unit_index = payload.unitIndex;
+    }
+     // 不满足？天
+    if (is.not.empty(payload.decMinAmount) &amp;&amp; is.existy(payload.decMinAmount)) {
+      byOnceParams.dec_min_amount = payload.decMinAmount;
+    }
+    // 每 X 天
+    if (is.not.empty(payload.decUnitAmount) &amp;&amp; is.existy(payload.decUnitAmount)) {
+      byOnceParams.dec_unit_amount = payload.decUnitAmount;
+    }
+    // 扣 ？元
+    if (is.not.empty(payload.decUnitMoney) &amp;&amp; is.existy(payload.decUnitMoney)) {
+      byOnceParams.dec_unit_money = Unit.exchangePriceToCent(payload.decUnitMoney);
+    }
+    // 单量统计指标
+    if (is.not.empty(payload.orderVarCount) &amp;&amp; is.existy(payload.orderVarCount)) {
+      byOrderUnitParams.unit_index = payload.orderVarCount;
+    }
+    // 每 X 单
+    if (is.not.empty(payload.incUnitAmount) &amp;&amp; is.existy(payload.incUnitAmount)) {
+      byOrderUnitParams.inc_unit_amount = payload.incUnitAmount;
+    }
+    // 最小单量
+    if (is.not.empty(payload.minAmount) &amp;&amp; is.existy(payload.minAmount)) {
+      byOrderUnitParams.min_amount = payload.minAmount;
+    }
+    // 补 Y 元
+    if (is.not.empty(payload.incUnitMoney) &amp;&amp; is.existy(payload.incUnitMoney)) {
+      byOrderUnitParams.inc_unit_money = Unit.exchangePriceToCent(payload.incUnitMoney);
+    }
+    // 底薪？元
+    if (is.not.empty(payload.salaryIncMoney) &amp;&amp; is.existy(payload.salaryIncMoney)) {
+      bySalaryBaseParams.salary_inc_money = Unit.exchangePriceToCent(payload.salaryIncMoney);
+    }
+    // 判断matchFilters是否有值
+    if (is.not.empty(matchFilters) &amp;&amp; is.existy(matchFilters)) {
+      params.match_filters = matchFilters;
+    }
+    // 判断按单补贴是否有值
+    if (is.not.empty(byOrderUnitParams) &amp;&amp; is.existy(byOrderUnitParams)) {
+      computeLogic.by_order_unit_params = byOrderUnitParams;
+    }
+    // 判断底薪补贴是否有值
+    if (is.not.empty(bySalaryBaseParams) &amp;&amp; is.existy(bySalaryBaseParams)) {
+      computeLogic.by_salary_base_params = bySalaryBaseParams;
+    }
+    // 判断总额补贴是否有值
+    if (is.not.empty(byOnceParams) &amp;&amp; is.existy(byOnceParams)) {
+      computeLogic.by_once_params = byOnceParams;
+    }
+    // 判断computeLogic是否有值
+    if (is.not.empty(computeLogic) &amp;&amp; is.existy(computeLogic)) {
+      params.compute_logic = computeLogic;
+    }
+    // 薪资单对应列
+    if (is.not.empty(payload.payrollMark) &amp;&amp; is.existy(payload.payrollMark)) {
+      params.payroll_mark = payload.payrollMark;
+    }
+    return params;
+  },
+  // 创建薪资规则第三步，质量
+  createRulesThird: (payload) => {
+    const {
+      step,
+      ruleCollectionId,
+      knightType,
+      knightTags,
+      state,
+      type,
+    } = payload;
+    // 第三步数据校验
+    const params = {};
+    params.match_filters = {};
+    params.compute_logic = {};
+
+    // 通用数据校验
+
+    // step required
+    if (is.existy(step) &amp;&amp; is.not.empty(step)) {
+      params.collection_cate = step;
+    } else {
+      throw new TypeError('step is required');
+    }
+
+    // id required
+    if (is.existy(ruleCollectionId) &amp;&amp; is.not.empty(ruleCollectionId)) {
+      params.rule_collection_id = ruleCollectionId;
+    } else {
+      throw new TypeError('ruleCollectionId is required');
+    }
+
+    // 骑士类型必选(数组)
+    if (is.existy(knightType) &amp;&amp; is.not.empty(knightType)) {
+      params.match_filters.knight_type = is.array(knightType) ?
+        knightType.map(v => Number(v)) :
+        [Number(knightType)];
+    } else {
+      throw new TypeError('knightType is required');
+    }
+
+    // 骑士标签必选(数组)
+    if (is.existy(knightTags) &amp;&amp; is.not.empty(knightTags)) {
+      params.match_filters.knight_tags = is.array(knightTags) ?
+        knightTags.map(v => String(v)) :
+        [String(knightTags)];
+    } else {
+      throw new TypeError('knightTags is required');
+    }
+
+    // 骑士在职状态必选(数组)
+    if (is.existy(state) &amp;&amp; is.not.empty(state)) {
+      params.match_filters.state = is.array(state) ?
+        state.map(v => Number(v)) :
+        [Number(state)];
+    } else {
+      throw new TypeError('state is required');
+    }
+
+    if (is.not.existy(type) || is.empty(type)) {
+      throw new TypeError('type is required');
+    }
+
+    if (type === FinanceQualityType.person) {
+      // 质量类型
+      params.match_filters.quality_type = [FinanceQualityType.person];
+      transferPayload.qualityPerson(params, payload);
+    } else if (type === FinanceQualityType.competition) {
+      // 质量类型
+      params.match_filters.quality_type = [FinanceQualityType.competition];
+      transferPayload.qualityCompetition(params, payload);
+    } else {
+      throw new TypeError('type is invalid');
+    }
+    // 薪资单对应列
+    if (is.not.empty(payload.payrollMark) &amp;&amp; is.existy(payload.payrollMark)) {
+      params.payroll_mark = payload.payrollMark;
+    }
+    return params;
+  },
+  // 创建薪资规则第四步，管理
+  createRulesForth: (payload) => {
+    const params = {};
+    const matchFilters = {};
+    const computeLogic = {};
+    const computeLogicParams = {};
+    const orderVars = {};
+    const bizLogic = [];
+    // 薪资规则集id
+    if (is.existy(payload.ruleCollectionId) &amp;&amp; is.not.empty(payload.ruleCollectionId)) {
+      params.rule_collection_id = payload.ruleCollectionId;
+    }
+    // 步骤
+    if (is.existy(payload.step) &amp;&amp; is.not.empty(payload.step)) {
+      params.collection_cate = payload.step;
+    }
+    // 骑士分类
+    if (is.existy(payload.knightType) &amp;&amp; is.not.empty(payload.knightType)) {
+      params.knight_type = payload.knightType.map(item => Number(item));
+    }
+    // 类型
+    if (is.existy(payload.bizCate) &amp;&amp; is.not.empty(payload.bizCate)) {
+      matchFilters.biz_cate = [Number(payload.bizCate)];
+    }
+    // 明细项
+    if (is.existy(payload.bizCateItem) &amp;&amp; is.not.empty(payload.bizCateItem)) {
+      matchFilters.biz_cate_item = [Number(payload.bizCateItem)];
+    }
+    // 险种
+    if (is.existy(payload.bizCateItemNote) &amp;&amp; is.not.empty(payload.bizCateItemNote)) {
+      matchFilters.biz_cate_item_note = payload.bizCateItemNote;
+    }
+
+    // 物资
+    if (payload.bizCate === FinanceSalaryManagementType.supplies) {
+      // 出勤天数
+      if (is.existy(payload.attendanceDays) &amp;&amp; is.not.empty(payload.attendanceDays)) {
+        orderVars.attendance_days = payload.attendanceDays;
+      }
+      // 在职天数
+      if (is.existy(payload.workDays) &amp;&amp; is.not.empty(payload.workDays)) {
+        orderVars.work_days = payload.workDays;
+      }
+      // 骑士标签
+      if (is.existy(payload.knightTags) &amp;&amp; is.not.empty(payload.knightTags)) {
+        orderVars.knight_tags = payload.knightTags;
+      }
+      // 满足条件
+      if (is.existy(payload.matchType) &amp;&amp; is.not.empty(payload.matchType)) {
+        orderVars.match_type = payload.matchType;
+        orderVars.type = 'compose';
+      }
+      // 条件规则
+      if (is.existy(orderVars) &amp;&amp; is.not.empty(orderVars)) {
+        matchFilters.order_vars = orderVars;
+      }
+      computeLogicParams.total_max_num = 0; // 累计最大值
+      computeLogicParams.type = 2; // 阶梯类型
+      if (is.existy(payload.rangeTable) &amp;&amp; is.not.empty(payload.rangeTable)) {
+        computeLogicParams.range_table = payload.rangeTable.map((item) => {
+          return {
+            index: item.index,
+            min: item.min,
+            money: Unit.exchangePriceToCent(item.money),
+            max: item.max,
+            symbol_max: item.symbolMax,
+            symbol_min: item.symbolMin,
+          };
+        });
+      }
+    }
+
+    // 保险
+    if (payload.bizCate === FinanceSalaryManagementType.insurance) {
+      // 按天扣款
+      if (is.existy(payload.dayFlag) &amp;&amp; payload.dayFlag === true) {
+        bizLogic.push('dec_logic_by_day');
+      }
+      // 统计指标
+      if (is.existy(payload.unitIndex) &amp;&amp; is.not.empty(payload.unitIndex)) {
+        computeLogicParams.unit_index = payload.unitIndex;
+      }
+      // 最小天数
+      if (is.existy(payload.unitAmount) &amp;&amp; is.not.empty(payload.unitAmount)) {
+        computeLogicParams.unit_amount = payload.unitAmount;
+      }
+      // 保险扣款金额
+      if (is.existy(payload.unitMoney) &amp;&amp; is.not.empty(payload.unitMoney)) {
+        computeLogicParams.unit_money = Unit.exchangePriceToCent(payload.unitMoney);
+      }
+      // 按月扣款
+      if (is.existy(payload.monthFlag) &amp;&amp; payload.monthFlag === true) {
+        bizLogic.push('dec_logic_by_once');
+      }
+      // 扣罚金额总额
+      if (is.existy(payload.decMoney) &amp;&amp; is.not.empty(payload.decMoney)) {
+        computeLogicParams.dec_money = Unit.exchangePriceToCent(payload.decMoney);
+      }
+    }
+
+    // 判断matchFilters是否有值
+    if (is.not.empty(matchFilters) &amp;&amp; is.existy(matchFilters)) {
+      params.match_filters = matchFilters;
+    }
+    // 判断bizLogic是否有值
+    if (is.not.empty(bizLogic) &amp;&amp; is.existy(bizLogic)) {
+      computeLogic.biz_logic = bizLogic;
+    }
+    // 判断computeLogicParams是否有值
+    if (is.not.empty(computeLogicParams) &amp;&amp; is.existy(computeLogicParams)) {
+      computeLogic.params = computeLogicParams;
+    }
+    // 判断computeLogic是否有值
+    if (is.not.empty(computeLogic) &amp;&amp; is.existy(computeLogic)) {
+      params.compute_logic = computeLogic;
+    }
+    // 薪资单对应列
+    if (is.not.empty(payload.payrollMark) &amp;&amp; is.existy(payload.payrollMark)) {
+      params.payroll_mark = payload.payrollMark;
+    }
+    return params;
+  },
+  // 编辑薪资规则第一步, 单量
+  updateRulesFirst: (payload) => {
+    const { computeLogic, matchFilters, step, id } = payload;
+    const params = {
+      payroll_mark: '',  // 薪资单对应列
+      compute_logic: {
+        biz_logic: ['order_logic_range'], // 阶梯分段|阶梯变动
+        params: {
+          total_max_num: 0,
+        },
+      },
+      match_filters: {},
+    };
+    // step required
+    if (is.existy(step) &amp;&amp; is.not.empty(step)) {
+      params.collection_cate = step;
+    } else {
+      throw new TypeError('step is required');
+    }
+    // objectId
+    if (is.not.empty(id) &amp;&amp; is.existy(id)) {
+      params._id = id;
+    } else {
+      throw new Error('objectId is required');
+    }
+    if (is.not.empty(computeLogic) &amp;&amp; is.existy(computeLogic)) {
+      // 方案提成
+      if (is.not.empty(computeLogic.type) &amp;&amp; is.existy(computeLogic.type)) {
+        params.compute_logic.params.type = Number(computeLogic.type);
+      }
+      // 单量规则
+      if (is.not.empty(computeLogic.rangeTable) &amp;&amp; is.existy(computeLogic.rangeTable)) {
+        const rangeTable = computeLogic.rangeTable.map((item) => {
+          return {
+            index: matchFilters.orderType[0],
+            symbol_min: item.symbolMin,
+            money: Number(Unit.exchangePriceToCent(item.money)),
+            min: Number(item.min),
+            max: item.max,
+            unit_amount: Number(item.unitAmount),
+            symbol_max: item.symbolMax,
+            min_money: 0,
+          };
+        });
+        params.compute_logic.params.range_table = rangeTable;
+      }
+    }
+    if (is.not.empty(matchFilters) &amp;&amp; is.existy(matchFilters)) {
+      // 薪资指标
+      if (is.not.empty(matchFilters.orderType) &amp;&amp; is.existy(matchFilters.orderType)) {
+        params.match_filters.order_type = matchFilters.orderType;
+      }
+      // 骑士分类
+      if (is.not.empty(matchFilters.knightType) &amp;&amp; is.existy(matchFilters.knightType)) {
+        params.match_filters.knight_type = matchFilters.knightType;
+      }
+      // 骑士标签
+      if (is.not.empty(matchFilters.knightTags) &amp;&amp; is.existy(matchFilters.knightTags)) {
+        params.match_filters.knight_tags = [`${matchFilters.knightTags}`];
+      }
+      // 当月在离职
+      if (is.not.empty(matchFilters.state) &amp;&amp; is.existy(matchFilters.state)) {
+        params.match_filters.state = matchFilters.state;
+      }
+      // 站点星级
+      if (is.not.empty(matchFilters.stationLevel) &amp;&amp; is.existy(matchFilters.stationLevel)) {
+        params.match_filters.station_level = matchFilters.stationLevel;
+      }
+    }
+    // 薪资单对应列
+    if (is.not.empty(payload.payrollMark) &amp;&amp; is.existy(payload.payrollMark)) {
+      params.payroll_mark = payload.payrollMark;
+    }
+    return params;
+  },
+  // 编辑薪资规则第二步，出勤
+  updateRulesSecond: (payload) => {
+    const params = {};
+    const matchFilters = {};
+    const computeLogic = {};
+    const byOnceParams = {
+      auto_inc_option: payload.autoIncOption, // 是否补贴
+      auto_dec_option: payload.autoDecOption, // 是否扣款
+    }; // 总额补贴
+    const byOrderUnitParams = {}; // 按单补贴
+    const bySalaryBaseParams = {}; // 底薪补贴
+    // 薪资规则集id
+    if (is.existy(payload.id) &amp;&amp; is.not.empty(payload.id)) {
+      params._id = payload.id;
+    }
+    // 步骤
+    if (is.existy(payload.step) &amp;&amp; is.not.empty(payload.step)) {
+      params.collection_cate = payload.step;
+    }
+    // 骑士分类
+    if (is.not.empty(payload.knightType) &amp;&amp; is.existy(payload.knightType)) {
+      matchFilters.knight_type = payload.knightType;
+    }
+    // 骑士标签
+    if (is.not.empty(payload.knightTags) &amp;&amp; is.existy(payload.knightTags)) {
+      matchFilters.knight_tags = payload.knightTags;
+    }
+    // 当月在离职
+    if (is.not.empty(payload.state) &amp;&amp; is.existy(payload.state)) {
+      matchFilters.state = payload.state;
+    }
+    // 满足条件
+    if (is.not.empty(payload.orderVars) &amp;&amp; is.existy(payload.orderVars)) {
+      matchFilters.order_vars = {
+        match_type: payload.orderVars.matchType,
+        type: 'compose',
+      };
+        // 当月在离职
+      if ((is.not.empty(payload.orderVars.rules) &amp;&amp; is.existy(payload.orderVars.rules)) &amp;&amp;
+        (is.not.empty(payload.orderVars.rules[0]) &amp;&amp; is.existy(payload.orderVars.rules[0]))) {
+        matchFilters.order_vars.rules = payload.orderVars.rules.map((v) => {
+          return {
+            index: v.index,   // 指标
+            symbol: v.symbol,  // 比较符
+            num: Unit.dynamicExchange(v.num, v.unit), // 指标量
+          };
+        });
+      }
+    }
+    // 总额补贴
+    if (is.not.empty(payload.bizLogic) &amp;&amp; is.existy(payload.bizLogic)) {
+      computeLogic.biz_logic = Array.isArray(payload.bizLogic) ? payload.bizLogic : [payload.bizLogic];
+    }
+    // 一次性补贴
+    if (is.not.empty(payload.onceMoney) &amp;&amp; is.existy(payload.onceMoney)) {
+      byOnceParams.once_money = Unit.exchangePriceToCent(payload.onceMoney);
+    }
+    // 奖罚金额指标
+    if (is.not.empty(payload.unitIndex) &amp;&amp; is.existy(payload.unitIndex)) {
+      byOnceParams.unit_index = payload.unitIndex;
+    }
+    // 不满足？天
+    if (is.not.empty(payload.decMinAmount) &amp;&amp; is.existy(payload.decMinAmount)) {
+      byOnceParams.dec_min_amount = payload.decMinAmount;
+    }
+    // 每 X 天
+    if (is.not.empty(payload.decUnitAmount) &amp;&amp; is.existy(payload.decUnitAmount)) {
+      byOnceParams.dec_unit_amount = payload.decUnitAmount;
+    }
+    // 扣 ？元
+    if (is.not.empty(payload.decUnitMoney) &amp;&amp; is.existy(payload.decUnitMoney)) {
+      byOnceParams.dec_unit_money = Unit.exchangePriceToCent(payload.decUnitMoney);
+    }
+    // 单量统计指标
+    if (is.not.empty(payload.orderVarCount) &amp;&amp; is.existy(payload.orderVarCount)) {
+      byOrderUnitParams.unit_index = payload.orderVarCount;
+    }
+    // 每 X 单
+    if (is.not.empty(payload.incUnitAmount) &amp;&amp; is.existy(payload.incUnitAmount)) {
+      byOrderUnitParams.inc_unit_amount = payload.incUnitAmount;
+    }
+    // 最小单量
+    if (is.not.empty(payload.minAmount) &amp;&amp; is.existy(payload.minAmount)) {
+      byOrderUnitParams.min_amount = payload.minAmount;
+    }
+    // 补 Y 元
+    if (is.not.empty(payload.incUnitMoney) &amp;&amp; is.existy(payload.incUnitMoney)) {
+      byOrderUnitParams.inc_unit_money = Unit.exchangePriceToCent(payload.incUnitMoney);
+    }
+    // 底薪？元
+    if (is.not.empty(payload.salaryIncMoney) &amp;&amp; is.existy(payload.salaryIncMoney)) {
+      bySalaryBaseParams.salary_inc_money = Unit.exchangePriceToCent(payload.salaryIncMoney);
+    }
+    // 判断matchFilters是否有值
+    if (is.not.empty(matchFilters) &amp;&amp; is.existy(matchFilters)) {
+      params.match_filters = matchFilters;
+    }
+    // 判断按单补贴是否有值
+    if (is.not.empty(byOrderUnitParams) &amp;&amp; is.existy(byOrderUnitParams)) {
+      computeLogic.by_order_unit_params = byOrderUnitParams;
+    }
+    // 判断底薪补贴是否有值
+    if (is.not.empty(bySalaryBaseParams) &amp;&amp; is.existy(bySalaryBaseParams)) {
+      computeLogic.by_salary_base_params = bySalaryBaseParams;
+    }
+    // 判断总额补贴是否有值
+    if (is.not.empty(byOnceParams) &amp;&amp; is.existy(byOnceParams)) {
+      computeLogic.by_once_params = byOnceParams;
+    }
+    // 判断computeLogic是否有值
+    if (is.not.empty(computeLogic) &amp;&amp; is.existy(computeLogic)) {
+      params.compute_logic = computeLogic;
+    }
+    // 薪资单对应列
+    if (is.not.empty(payload.payrollMark) &amp;&amp; is.existy(payload.payrollMark)) {
+      params.payroll_mark = payload.payrollMark;
+    }
+    return params;
+  },
+  // 编辑薪资规则第三步, 质量
+  updateRulesThird: (payload) => {
+    const {
+      id,
+      step,
+      type,
+      knightTags,
+      knightType,
+      state,
+    } = payload;
+    // 第三步数据校验
+    const params = {};
+    params.match_filters = {};
+    params.compute_logic = {};
+
+    // id
+    if (is.existy(id) &amp;&amp; is.not.empty(id)) {
+      params._id = id;
+    } else {
+      throw new TypeError('id is required');
+    }
+
+    // 步骤
+    if (is.existy(step) &amp;&amp; is.not.empty(step)) {
+      params.collection_cate = step;
+    }
+
+    // 骑士类型必选(数组)
+    if (is.existy(knightType) &amp;&amp; is.not.empty(knightType)) {
+      params.match_filters.knight_type = is.array(knightType) ?
+        knightType.map(v => Number(v)) :
+        [Number(knightType)];
+    } else {
+      throw new TypeError('knightType is required');
+    }
+
+    // 骑士标签必选(数组)
+    if (is.existy(knightTags) &amp;&amp; is.not.empty(knightTags)) {
+      params.match_filters.knight_tags = is.array(knightTags) ?
+        knightTags.map(v => String(v)) :
+        [String(knightTags)];
+    } else {
+      throw new TypeError('knightTags is required');
+    }
+
+    // 骑士在职状态必选(数组)
+    if (is.existy(state) &amp;&amp; is.not.empty(state)) {
+      params.match_filters.state = is.array(state) ?
+        state.map(v => Number(v)) :
+        [Number(state)];
+    } else {
+      throw new TypeError('state is required');
+    }
+
+    if (is.not.existy(type) || is.empty(type)) {
+      throw new TypeError('type is required');
+    }
+
+    if (type === FinanceQualityType.person) {
+      params.match_filters.quality_type = [FinanceQualityType.person];
+      transferPayload.qualityPerson(params, payload);
+    } else if (type === FinanceQualityType.competition) {
+      params.match_filters.quality_type = [FinanceQualityType.competition];
+      transferPayload.qualityCompetition(params, payload);
+    } else {
+      throw new TypeError('type is invalid');
+    }
+    // 薪资单对应列
+    if (is.not.empty(payload.payrollMark) &amp;&amp; is.existy(payload.payrollMark)) {
+      params.payroll_mark = payload.payrollMark;
+    }
+    return params;
+  },
+  // 编辑薪资规则第四步，管理
+  updateRulesForth: (payload) => {
+    const params = {};
+    const matchFilters = {};
+    const computeLogic = {};
+    const computeLogicParams = {};
+    const orderVars = {};
+    const bizLogic = [];
+    // 薪资规则集id
+    if (is.existy(payload.id) &amp;&amp; is.not.empty(payload.id)) {
+      params._id = payload.id;
+    }
+    // 步骤
+    if (is.existy(payload.step) &amp;&amp; is.not.empty(payload.step)) {
+      params.collection_cate = payload.step;
+    }
+    // 骑士分类
+    if (is.existy(payload.knightType) &amp;&amp; is.not.empty(payload.knightType)) {
+      params.knight_type = payload.knightType;
+    }
+    // 类型
+    if (is.existy(payload.bizCate) &amp;&amp; is.not.empty(payload.bizCate)) {
+      matchFilters.biz_cate = payload.bizCate;
+    }
+    // 明细项
+    if (is.existy(payload.bizCateItem) &amp;&amp; is.not.empty(payload.bizCateItem)) {
+      matchFilters.biz_cate_item = payload.bizCateItem;
+    }
+
+    // 险种
+    if (is.existy(payload.bizCateItemNote) &amp;&amp; is.not.empty(payload.bizCateItemNote)) {
+      matchFilters.biz_cate_item_note = payload.bizCateItemNote;
+    }
+
+    // 物资
+    if (payload.bizCate[0] === FinanceSalaryManagementType.supplies) {
+      // 出勤天数
+      if (is.existy(payload.attendanceDays) &amp;&amp; is.not.empty(payload.attendanceDays)) {
+        orderVars.attendance_days = payload.attendanceDays;
+      }
+      // 在职天数
+      if (is.existy(payload.workDays) &amp;&amp; is.not.empty(payload.workDays)) {
+        orderVars.work_days = payload.workDays;
+      }
+      // 骑士标签
+      if (is.existy(payload.knightTags) &amp;&amp; is.not.empty(payload.knightTags)) {
+        orderVars.knight_tags = payload.knightTags;
+      }
+      // 满足条件
+      if (is.existy(payload.matchType) &amp;&amp; is.not.empty(payload.matchType)) {
+        orderVars.match_type = payload.matchType;
+        orderVars.type = 'compose';
+      }
+      // 条件规则
+      if (is.existy(orderVars) &amp;&amp; is.not.empty(orderVars)) {
+        matchFilters.order_vars = orderVars;
+      }
+      computeLogicParams.total_max_num = 0; // 累计最大值
+      computeLogicParams.type = 2; // 阶梯类型
+      if (is.existy(payload.rangeTable) &amp;&amp; is.not.empty(payload.rangeTable)) {
+        computeLogicParams.range_table = payload.rangeTable.map((item) => {
+          return {
+            index: item.index,
+            min: item.min,
+            money: Unit.exchangePriceToCent(item.money),
+            max: item.max,
+            symbol_max: item.symbolMax,
+            symbol_min: item.symbolMin,
+          };
+        });
+      }
+    }
+
+    // 保险
+    if (payload.bizCate[0] === FinanceSalaryManagementType.insurance) {
+      // 按天扣款
+      if (is.existy(payload.dayFlag) &amp;&amp; payload.dayFlag === true) {
+        bizLogic.push('dec_logic_by_day');
+      }
+      // 统计指标
+      if (is.existy(payload.unitIndex) &amp;&amp; is.not.empty(payload.unitIndex)) {
+        computeLogicParams.unit_index = payload.unitIndex;
+      }
+      // 最小天数
+      if (is.existy(payload.unitAmount) &amp;&amp; is.not.empty(payload.unitAmount)) {
+        computeLogicParams.unit_amount = payload.unitAmount;
+      }
+      // 保险扣款金额
+      if (is.existy(payload.unitMoney) &amp;&amp; is.not.empty(payload.unitMoney)) {
+        computeLogicParams.unit_money = Unit.exchangePriceToCent(payload.unitMoney);
+      }
+      // 按月扣款
+      if (is.existy(payload.monthFlag) &amp;&amp; payload.monthFlag === true) {
+        bizLogic.push('dec_logic_by_once');
+      }
+      // 扣罚金额总额
+      if (is.existy(payload.decMoney) &amp;&amp; is.not.empty(payload.decMoney)) {
+        computeLogicParams.dec_money = Unit.exchangePriceToCent(payload.decMoney);
+      }
+    }
+
+    // 判断matchFilters是否有值
+    if (is.not.empty(matchFilters) &amp;&amp; is.existy(matchFilters)) {
+      params.match_filters = matchFilters;
+    }
+    // 判断bizLogic是否有值
+    if (is.not.empty(bizLogic) &amp;&amp; is.existy(bizLogic)) {
+      computeLogic.biz_logic = bizLogic;
+    }
+    // 判断computeLogicParams是否有值
+    if (is.not.empty(computeLogicParams) &amp;&amp; is.existy(computeLogicParams)) {
+      computeLogic.params = computeLogicParams;
+    }
+    // 判断computeLogic是否有值
+    if (is.not.empty(computeLogic) &amp;&amp; is.existy(computeLogic)) {
+      params.compute_logic = computeLogic;
+    }
+    // 薪资单对应列
+    if (is.not.empty(payload.payrollMark) &amp;&amp; is.existy(payload.payrollMark)) {
+      params.payroll_mark = payload.payrollMark;
+    }
+    return params;
+  },
+  // 薪资规则质量奖励法
+  qualityRuleAward: (param, payload) => {
+    const {
+      awardType,
+      ladderAwardRule,
+      multipleConditions,
+      orderType,
+      orderTypeUnit,
+      rewardMoneyLimit,
+    } = payload;
+    const params = param;
+
+    if (awardType === FinanceQualityAwardType.ladder) {
+      // 奖励方式
+      params.compute_logic.biz_logic.push('qc_logic_by_range');
+      // 阶梯奖励
+      params.compute_logic.range_params = {};
+      // 阶梯类型(阶梯变动)
+      params.compute_logic.range_params.type = SalaryExtractType.change;
+      // 指标
+      if (is.existy(orderType) &amp;&amp; is.not.empty(orderType)) {
+        params.compute_logic.range_params.index = orderType;
+      } else {
+        throw new TypeError('orderType is required');
+      }
+      // 累加最大值(money)
+      if (is.existy(rewardMoneyLimit) &amp;&amp; is.not.empty(rewardMoneyLimit)) {
+        params.compute_logic.range_params.total_max_num = Unit.exchangePriceToCent(rewardMoneyLimit);
+      } else {
+        throw new TypeError('rewardMoneyLimit is required');
+      }
+      // 阶梯奖励
+      if (is.existy(ladderAwardRule) &amp;&amp; is.not.empty(ladderAwardRule)) {
+        params.compute_logic.range_params.range_table = ladderAwardRule.map((v) => {
+          return {
+            min: Unit.dynamicExchange(v.startOrder, orderTypeUnit), // 最小值
+            symbol_min: '&lt;',   // 第一个比较符
+            index: orderType, // 指标
+            symbol_max: v.compareType, // 第二个比较值
+            max: Unit.dynamicExchange(v.endOrder, orderTypeUnit),  // 最大值
+            // money(奖励为正数,扣罚为负数)
+            money: Number(v.awardOrPunish) === FinanceQualityAwardOrPunish.award ?
+              Unit.exchangePriceToCent(v.money) :
+              -Unit.exchangePriceToCent(Number(v.money)),
+            // money(奖励为正数,扣罚为负数)
+            min_money: Number(v.awardOrPunish) === FinanceQualityAwardOrPunish.award ?
+              Unit.exchangePriceToCent(v.minMoney) :
+              -Unit.exchangePriceToCent(Number(v.minMoney)),
+            unit_amount: Unit.dynamicExchange(v.unitAmount, orderTypeUnit), // 步长
+            // 按和档位最高值不足部分（和档位上限差额值）计算 False 按实际量计算
+            delta_flag: Number(v.calculateType) === SalaryRulesLadderCalculateType.difference,
+          };
+        });
+      } else {
+        throw new TypeError('ladderAwardRule is required');
+      }
+    } else if (awardType === FinanceQualityAwardType.mutipleConditions) {
+      // 多条件筛选
+      // 奖励方式
+      params.compute_logic.biz_logic.push('qc_logic_by_multiple');
+      // 多条件奖励
+      if (is.existy(multipleConditions) &amp;&amp; is.not.empty(multipleConditions)) {
+        params.compute_logic.multiple_params = multipleConditions.map((rawValue) => {
+          const {
+            award: {
+              awardOrPunish,
+              compareItem,
+              money,
+              index,
+              unit,
+            },
+            conditions: {
+              rules,
+            },
+          } = rawValue;
+          return {
+
+            match_type: FinanceSalaryMeetConditions.meetAll, // 条件类型(全部满足)
+            rules: rules.map((v) => {
+              return {
+                index: v.index,   // 指标
+                symbol: v.symbol,  // 比较符
+                num: Unit.dynamicExchange(v.num, v.unit), // 指标量
+              };
+            }),
+            unit_index: compareItem,  // 根据?指标
+            unit_amount: Unit.dynamicExchange(index, unit), // 每?指标量
+            // money(奖励为正数,扣罚为负数)
+            unit_money: Number(awardOrPunish) === FinanceQualityAwardOrPunish.award ?
+              Unit.exchangePriceToCent(money) :
+              -Unit.exchangePriceToCent(money),
+          };
+        });
+      } else {
+        throw new TypeError('mutipleConditions is required');
+      }
+    }
+  },
+  // 薪资规则质量单人考核
+  qualityPerson: (param, payload) => {
+    const {
+      statisticsTime,
+      orderIndex,
+    } = payload;
+    const params = param;
+    // 单人考核
+
+    // 条件规则
+    if (is.existy(orderIndex) &amp;&amp; is.not.empty(orderIndex)) {
+      params.match_filters.order_vars = {};
+      params.match_filters.order_vars.type = 'compose';
+      params.match_filters.order_vars.match_type = Number(orderIndex.matchType);
+      params.match_filters.order_vars.rules = orderIndex.rules.map((v) => {
+        return {
+          index: v.index,
+          symbol: v.symbol,
+          num: Unit.dynamicExchange(v.num, v.unit),
+        };
+      });
+    } else {
+      throw new TypeError('orderIndex is required');
+    }
+
+    // 计算逻辑
+
+    // 数据统计时间必选(数字)
+    if (is.existy(statisticsTime) &amp;&amp; is.not.empty(statisticsTime)) {
+      params.match_filters.statistics_time_type = statisticsTime;
+    } else {
+      throw new TypeError('statisticsTime is required');
+    }
+
+    // 奖励
+    params.compute_logic.biz_logic = [];
+    transferPayload.qualityRuleAward(params, payload);
+  },
+  // 薪资规则质量竞赛评比
+  qualityCompetition: (param, payload) => {
+    const {
+      statisticsTime,
+      evaluationRange,
+      sortIndex,
+      sortOrder,
+      awardSetting,
+      rankSetting,
+      rank,
+      orderIndex,
+      minPeople,
+      maxPeople,
+    } = payload;
+    const params = param;
+    // 竞赛评比
+
+
+    // 数据统计时间必选(数字)
+    if (is.existy(statisticsTime) &amp;&amp; is.not.empty(statisticsTime)) {
+      params.match_filters.statistics_time_type = statisticsTime;
+    } else {
+      throw new TypeError('statisticsTime is required');
+    }
+
+    // 评比范围必选(数字)
+    if (is.existy(evaluationRange) &amp;&amp; is.not.empty(evaluationRange)) {
+      params.match_filters.sort_scope = Number(evaluationRange);
+    } else {
+      throw new TypeError('evaluationRange is required');
+    }
+
+    // 筛选条件
+    params.match_filters.order_vars = {};
+    if (is.existy(orderIndex) &amp;&amp; is.not.empty(orderIndex)) {
+      const { matchType, rules } = orderIndex;
+      params.match_filters.order_vars = {
+        type: 'compose',
+        match_type: matchType, // 条件类型
+        rules: rules.map((v) => {
+          return {
+            index: v.index, // 指标
+            symbol: v.symbol, // 比较符
+            num: Unit.dynamicExchange(v.num, v.unit),
+          };
+        }),
+      };
+    } else {
+      throw new TypeError('orderIndexMutiple is required');
+    }
+
+    // 排序指标必选(数字)
+    if (is.existy(sortIndex) &amp;&amp; is.not.empty(sortIndex)) {
+      params.match_filters.sort_index = sortIndex;
+    } else {
+      throw new TypeError('sortIndex is required');
+    }
+
+    // 排序方式必选(数字)
+    if (is.existy(sortOrder) &amp;&amp; is.not.empty(sortOrder)) {
+      params.match_filters.sort_index_type = Number(sortOrder);
+    } else {
+      throw new TypeError('sortOrder is required');
+    }
+
+    // 最小人数
+    if (is.existy(minPeople) &amp;&amp; is.not.empty(minPeople)) {
+      params.match_filters.result_amount_min = Number(minPeople);
+    } else {
+      throw new TypeError('minPeople is required');
+    }
+
+    // 最大人数
+    if (is.existy(maxPeople) &amp;&amp; is.not.empty(maxPeople)) {
+      params.match_filters.result_amount_limit = Number(maxPeople);
+    } else {
+      // 若未填写最大人数, 表示不限, 传给后端&lt;=0的值即可
+      params.match_filters.result_amount_limit = -1;
+    }
+
+    // 1.奖励法 2.竞赛评比
+    params.compute_logic.biz_logic = [];
+    if (is.existy(awardSetting) &amp;&amp; is.not.empty(awardSetting)) {
+      if (awardSetting === true) {
+        // 奖励法
+        transferPayload.qualityRuleAward(params, payload);
+      }
+    } else {
+      throw new TypeError('awardSetting is required');
+    }
+
+    if (is.existy(rankSetting) &amp;&amp; is.not.empty(rankSetting)) {
+      if (rankSetting === true) {
+        params.compute_logic.biz_logic.push('qc_logic_battle');
+        if (is.existy(rank) &amp;&amp; is.not.empty(rank)) {
+          params.compute_logic.battle_params = {
+            rank_sum: rank.rankSum,
+            ladder: rank.rankLadder.map((v) => {
+              return {
+                rank_from: v.interval[0],  // 第n名开始
+                rank_to: v.interval[1],    // 到第n名
+                money: Unit.exchangePriceToCent(v.money),         // 奖励的钱
+              };
+            }),
+          };
+        } else {
+          throw new TypeError('rank is required');
+        }
+      }
+    } else {
+      throw new TypeError('rankSetting is required');
+    }
+  },
+};
+
+export default {
+  /**
+   * 命名空间
+   * @default
+   */
+  namespace: 'financeRulesGenerator',
+
+  /**
+   * 状态树
+   * @prop {object} orderTypes 获取单型指标数据
+   * @prop {object} financeRulesGeneratorList 薪资规则明细列表数据
+   */
+  state: {
+    orderTypes: {
+      /* [paramsStr]: {
+        time: , // 上次请求成功时间
+        currentTask: [], // 当前是否有请求
+        data: , []// 数据
+      }, */
+    }, // 单型指标
+    /**
+     * 薪资规则明细列表
+     * 按步骤划分
+     */
+    financeRulesGeneratorList: {
+      /* ruleCollectionId: {
+        [FinanceRulesGeneratorStep.first]: {}, // 第一步
+        [FinanceRulesGeneratorStep.second]: {}, // 第二步
+        [FinanceRulesGeneratorStep.third]: {}, // 第三步
+        [FinanceRulesGeneratorStep.forth]: {}, // 第四步
+      }, */
+    },
+  },
+
+  /**
+   * @namespace financeRulesGenerator/effects
+   */
+  effects: {
+    /**
+     * 创建薪资规则步骤
+     * @memberof module:model/financeRulesGenerator~financeRulesGenerator/effects
+     */
+    *createRulesGeneratorSteps({ payload }, { put }) {
+      const { step } = payload;
+      // 提交到服务器的参数
+      let params = {};
+      if (step === FinanceRulesGeneratorStep.first) {
+        // 第一步数据校验
+        params = transferPayload.createRulesFirst(payload);
+      } else if (step === FinanceRulesGeneratorStep.second) {
+        // 第二步数据校验
+        params = transferPayload.createRulesSecond(payload);
+      } else if (step === FinanceRulesGeneratorStep.third) {
+        // 第三步数据校验
+        params = transferPayload.createRulesThird(payload);
+      } else if (step === FinanceRulesGeneratorStep.forth) {
+        // 第四步数据校验
+        params = transferPayload.createRulesForth(payload);
+      } else {
+        // step 错误
+        throw new TypeError('step must be one of \'1 2 3 4\'');
+      }
+      // 业务请求
+      const request = {
+        params, // 接口参数
+        service: createRulesGeneratorSteps,  // 接口
+        onSuccessCallback: payload.onSuccessCallback, // 成功回调
+        onFailureCallback: payload.onFailureCallback, // 失败回调
+      };
+      yield put({ type: 'applicationCore/requestWithCallback', payload: request });
+    },
+
+    /**
+     * 获取薪资规则明细列表
+     * @param {string} state 状态
+     * @param {object} _meta 分页格式
+     * @param {unknow} collection_cate 通用数据校验
+     * @param {string} rule_collection_id ruleCollectionId
+     * @memberof module:model/financeRulesGenerator~financeRulesGenerator/effects
+     */
+    *fetchRulesGeneratorList({ payload }, { call, put }) {
+      const params = {
+        state: SalaryExtractListType.normal,
+        _meta: { page: 1, limit: 1000 },
+      };
+      const {
+        step,
+        ruleCollectionId,
+      } = payload;
+
+      // 通用数据校验
+      // step required
+      if (is.existy(step) &amp;&amp; is.not.empty(step)) {
+        params.collection_cate = step;
+      } else {
+        throw new TypeError('step is required');
+      }
+      // ruleCollectionId
+      if (is.not.empty(ruleCollectionId) &amp;&amp; is.existy(ruleCollectionId)) {
+        params.rule_collection_id = ruleCollectionId;
+      } else {
+        throw new Error('ruleCollectionId is required');
+      }
+
+      const result = yield call(fetchRulesGeneratorList, params);
+      if (is.existy(result)) {
+        yield put({ type: 'reduceRulesGeneratorList', payload: { result, step, ruleCollectionId } });
+      }
+    },
+
+    /**
+     * 薪资规则/薪资规则生成/列表删除
+     * @param {string} _id id
+     * @memberof module:model/financeRulesGenerator~financeRulesGenerator/effects
+     */
+    *deleteFinanceRulesGeneratorList({ payload }, { put }) {
+      const params = {
+        _id: payload.id,
+      };
+      // 业务请求
+      const request = {
+        params, // 接口参数
+        service: deleteFinanceRulesGeneratorList,  // 接口
+        onSuccessCallback: payload.onSuccessCallback, // 成功回调
+        onFailureCallback: payload.onFailureCallback, // 失败回调
+      };
+      yield put({ type: 'applicationCore/requestWithCallback', payload: request });
+    },
+
+    /**
+     * 薪资规则保存
+     * @param {string} plan_version_id 方案id
+     * @memberof module:model/financeRulesGenerator~financeRulesGenerator/effects
+     */
+    *createFinanceRulesGenerator({ payload }, { put }) {
+      const params = {
+        plan_version_id: payload.planVersionId,
+      };
+      // 业务请求
+      const request = {
+        params, // 接口参数
+        service: createFinanceRulesGenerator,  // 接口
+        onSuccessCallback: payload.onSuccessCallback, // 成功回调
+        onFailureCallback: payload.onFailureCallback, // 失败回调
+      };
+      yield put({ type: 'applicationCore/requestWithCallback', payload: request });
+    },
+
+    /**
+     * 薪资规则列表保存
+     * @memberof module:model/financeRulesGenerator~financeRulesGenerator/effects
+     */
+    *createFinanceRulesGeneratorListOne({ payload }, { put }) {
+      let params = {};
+      const {
+        step,
+      } = payload;
+      if (step === FinanceRulesGeneratorStep.first) {
+        // 第一步数据校验
+        params = transferPayload.updateRulesFirst(payload);
+      } else if (step === FinanceRulesGeneratorStep.second) {
+        // 第二步数据校验
+        params = transferPayload.updateRulesSecond(payload);
+      } else if (step === FinanceRulesGeneratorStep.third) {
+        // 第三步数据校验
+        params = transferPayload.updateRulesThird(payload);
+      } else if (step === FinanceRulesGeneratorStep.forth) {
+        // 第四步数据校验
+        params = transferPayload.updateRulesForth(payload);
+      } else {
+        // step 错误
+        throw new TypeError('step must be one of \'1 2 3 4\'');
+      }
+      // 业务请求
+      const request = {
+        params, // 接口参数
+        service: createFinanceRulesGeneratorListOne,  // 接口
+        onSuccessCallback: payload.onSuccessCallback, // 成功回调
+        onFailureCallback: payload.onFailureCallback, // 失败回调
+      };
+      yield put({ type: 'applicationCore/requestWithCallback', payload: request });
+    },
+
+    /**
+     * 启用|不使用薪资规则
+     * @param {string} rule_collection_id unknow
+     * @param {unknow} rule_flag unknow
+     * @param {unknow} type unknow
+     * @memberof module:model/financeRulesGenerator~financeRulesGenerator/effects
+     */
+    *updateRulesGeneratorByEnableDisable({ payload }, { put }) {
+      const params = {
+        rule_collection_id: payload.ruleCollectionId,
+        rule_flag: payload.ruleFlag,
+        type: payload.step,
+      };
+      // 业务请求
+      const request = {
+        params, // 接口参数
+        service: updateRulesGeneratorByState,  // 接口
+        onSuccessCallback: payload.onSuccessCallback, // 成功回调
+        onFailureCallback: payload.onFailureCallback, // 失败回调
+      };
+      yield put({ type: 'applicationCore/requestWithCallback', payload: request });
+    },
+
+    /**
+     * 薪资规则/薪资规则生成/列表上移|下移
+     * @param {string} up_id unknow
+     * @param {string} down_id unknow
+     * @memberof module:model/financeRulesGenerator~financeRulesGenerator/effects
+     */
+    *updateFinanceRuleSort({ payload }, { put }) {
+      const params = {
+        up_id: payload.upId,
+        down_id: payload.downId,
+      };
+      // 业务请求
+      const request = {
+        params, // 接口参数
+        service: updateFinanceRuleSort,  // 接口
+        onSuccessCallback: payload.onSuccessCallback, // 成功回调
+        onFailureCallback: payload.onFailureCallback, // 失败回调
+      };
+      yield put({ type: 'applicationCore/requestWithCallback', payload: request });
+    },
+
+    /**
+     * 获取单型指标
+     * @param {array} platform_code 平台
+     * @param {number} state 状态
+     * @param {array} tags 步骤
+     * @param {object} _meta 分页格式
+     * @memberof module:model/financeRulesGenerator~financeRulesGenerator/effects
+     */
+    *fetchGeneratorOrderTypes({ payload }, { put, call }) {
+      const params = {
+        platform_code: payload.platformCode,
+        state: 100, // 状态
+        tags: payload.tags,
+        _meta: { page: 1, limit: 1000 },
+      };
+      // 平台
+      if (is.not.empty(payload.platformCode) &amp;&amp; is.existy(payload.platformCode)) {
+        params.platform_code = payload.platformCode;
+      }
+      // 步骤
+      if (is.not.empty(payload.tags) &amp;&amp; is.existy(payload.tags)) {
+        params.tags = payload.tags;
+      }
+      // 用两个参数的唯一组合作为namespace,防止数据互相影响
+      const namespace = `${payload.platformCode}${payload.tags}`;
+      const result = yield call(fetchGeneratorOrderTypes, params);
+      if (result !== undefined) {
+        yield put({
+          type: 'reduceGeneratorOrderTypes',
+          payload: { namespace, result },
+        });
+      }
+    },
+  },
+
+  /**
+   * @namespace financeRulesGenerator/reducers
+   */
+  reducers: {
+    /**
+     * 获取薪资规则明细列表数据
+     * @returns {object} 更新 financeRulesGeneratorList
+     * @memberof module:model/financeRulesGenerator~financeRulesGenerator/reducers
+     */
+    reduceRulesGeneratorList(state, action) {
+      // mock的数据映射,方便以后替换
+      const mapperMetaMock = meta => meta;
+      // const mapperDataMock = data => data;
+      return {
+        ...state,
+        financeRulesGeneratorList: {
+          ...state.financeRulesGeneratorList,
+          [action.payload.ruleCollectionId]: {
+            ...state.financeRulesGeneratorList[action.payload.ruleCollectionId],
+            [action.payload.step]: {
+              meta: mapperMetaMock(action.payload.result.meta),
+              data: SalaryRuleListItem.mapperEach(action.payload.result.data, SalaryRuleListItem),
+            },
+          },
+        },
+      };
+    },
+
+    /**
+     * 获取单型指标数据
+     * @returns {object} 更新 orderTypes
+     * @memberof module:model/financeRulesGenerator~financeRulesGenerator/reducers
+     */
+    reduceGeneratorOrderTypes(state, action) {
+      const {
+        namespace,
+        result,
+      } = action.payload;
+      const data = SalaryVar.mapperEach(result.data, SalaryVar);
+      const unitText = state.orderTypes.unitText || {};
+      // id和指标单位名称的对应关系
+      data.forEach((v) => {
+        unitText[v.id] = v.unitText;
+      });
+      return {
+        ...state,
+        orderTypes: {
+          ...state.orderTypes,
+          unitText,
+          [namespace]: {
+            data,
+          },
+        },
+      };
+    },
+  },
+};
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-model_account_exception.html">model/account/exception</a></li><li><a href="module-model_account_manage.html">model/account/manage</a></li><li><a href="module-model_accountInfo.html">model/accountInfo</a></li><li><a href="module-model_admin_manage.html">model/admin/manage</a></li><li><a href="module-model_analysis.html">model/analysis</a></li><li><a href="module-model_application_common.html">model/application/common</a></li><li><a href="module-model_application_core.html">model/application/core</a></li><li><a href="module-model_application_files.html">model/application/files</a></li><li><a href="module-model_application_setting.html">model/application/setting</a></li><li><a href="module-model_application_subscription.html">model/application/subscription</a></li><li><a href="module-model_applicationManage.html">model/applicationManage</a></li><li><a href="module-model_district_manage.html">model/district/manage</a></li><li><a href="module-model_employee_contract.html">model/employee/contract</a></li><li><a href="module-model_employee_manage.html">model/employee/manage</a></li><li><a href="module-model_employee_transport.html">model/employee/transport</a></li><li><a href="module-model_expense_approval.html">model/expense/approval</a></li><li><a href="module-model_expense_borrowingRepaments.html">model/expense/borrowingRepaments</a></li><li><a href="module-model_expense_costOrder.html">model/expense/costOrder</a></li><li><a href="module-model_expense_examineFlow.html">model/expense/examineFlow</a></li><li><a href="module-model_expense_examineOrder.html">model/expense/examineOrder</a></li><li><a href="module-model_expense_houseContract.html">model/expense/houseContract</a></li><li><a href="module-model_expense_subject.html">model/expense/subject</a></li><li><a href="module-model_expense_type.html">model/expense/type</a></li><li><a href="module-model_finance_plan.html">model/finance/plan</a></li><li><a href="module-model_finance_task.html">model/finance/task</a></li><li><a href="module-model_financeFundsConfig.html">model/financeFundsConfig</a></li><li><a href="module-model_financeRulesGenerator.html">model/financeRulesGenerator</a></li><li><a href="module-model_financeSummaryManage.html">model/financeSummaryManage</a></li><li><a href="module-model_inquireModel.html">model/inquireModel</a></li><li><a href="module-model_materials.html">model/materials</a></li><li><a href="module-model_operationManage.html">model/operationManage</a></li><li><a href="module-model_supplier_manage.html">model/supplier/manage</a></li><li><a href="module-model_supply_deductions.html">model/supply/deductions</a></li><li><a href="module-model_supply_details.html">model/supply/details</a></li><li><a href="module-model_supply_distribution.html">model/supply/distribution</a></li><li><a href="module-model_supply_procurement.html">model/supply/procurement</a></li><li><a href="module-model_supply_set.html">model/supply/set</a></li><li><a href="module-model_system.html">model/system</a></li><li><a href="module-model_system_city.html">model/system/city</a></li><li><a href="module-model_system_download.html">model/system/download</a></li><li><a href="module-model_system_manage.html">model/system/manage</a></li><li><a href="module-model_system_recommendedCompany.html">model/system/recommendedCompany</a></li><li><a href="module-model_upload.html">model/upload</a></li><li><a href="module-services_account.html">services/account</a></li><li><a href="module-services_analysis.html">services/analysis</a></li><li><a href="module-services_employee.html">services/employee</a></li><li><a href="module-services_expense.html">services/expense</a></li><li><a href="module-services_expense_borrowingRepayment.html">services/expense/borrowingRepayment</a></li><li><a href="module-services_expense_costOrder.html">services/expense/costOrder</a></li><li><a href="module-services_expense_examineOrder.html">services/expense/examineOrder</a></li><li><a href="module-services_expense_houseContract.html">services/expense/houseContract</a></li><li><a href="module-services_finance.html">services/finance</a></li><li><a href="module-services_finance_funds.html">services/finance/funds</a></li><li><a href="module-services_inquire.html">services/inquire</a></li><li><a href="module-services_login.html">services/login</a></li><li><a href="module-services_salary.html">services/salary</a></li><li><a href="module-services_setting.html">services/setting</a></li><li><a href="module-services_stores.html">services/stores</a></li><li><a href="module-services_system.html">services/system</a></li><li><a href="module-services_system_city.html">services/system/city</a></li><li><a href="module-services_system_recommendedCompany.html">services/system/recommendedCompany</a></li><li><a href="module-services_system_supplier.html">services/system/supplier</a></li><li><a href="module-services_upload.html">services/upload</a></li></ul><h3>Namespaces</h3><ul><li><a href="module-model_account_exception-account_exception_effects.html">account/exception/effects</a></li><li><a href="module-model_account_exception-account_exception_reducers.html">account/exception/reducers</a></li><li><a href="module-model_account_exception-account_exception_subscriptions.html">account/exception/subscriptions</a></li><li><a href="module-model_account_manage-account_manage_effects.html">account/manage/effects</a></li><li><a href="module-model_account_manage-account_manage_reducers.html">account/manage/reducers</a></li><li><a href="module-model_accountInfo-account_accountInfo_effects.html">account/accountInfo/effects</a></li><li><a href="module-model_accountInfo-account_accountInfo_reducers.html">account/accountInfo/reducers</a></li><li><a href="module-model_accountInfo-account_accountInfo_subscriptions.html">account/accountInfo/subscriptions</a></li><li><a href="module-model_admin_manage-admin_manage_effects.html">admin/manage/effects</a></li><li><a href="module-model_admin_manage-admin_manage_reducers.html">admin/manage/reducers</a></li><li><a href="module-model_admin_manage-admin_manage_subscriptions.html">admin/manage/subscriptions</a></li><li><a href="module-model_analysis-analysis_effects.html">analysis/effects</a></li><li><a href="module-model_analysis-analysis_reducers.html">analysis/reducers</a></li><li><a href="module-model_analysis-analysis_subscriptions.html">analysis/subscriptions</a></li><li><a href="module-model_application_common-application_common_effects.html">application/common/effects</a></li><li><a href="module-model_application_common-application_common_reducers.html">application/common/reducers</a></li><li><a href="module-model_application_core-application_core_effects.html">application/core/effects</a></li><li><a href="module-model_application_files-application_files_effects.html">application/files/effects</a></li><li><a href="module-model_application_files-application_files_reducers.html">application/files/reducers</a></li><li><a href="module-model_application_setting-application_setting_effects.html">application/setting/effects</a></li><li><a href="module-model_application_setting-application_setting_reducers.html">application/setting/reducers</a></li><li><a href="module-model_application_subscription-application_subscription_subscriptions.html">application/subscription/subscriptions</a></li><li><a href="module-model_applicationManage-applicationManage_effects.html">applicationManage/effects</a></li><li><a href="module-model_applicationManage-applicationManage_reducers.html">applicationManage/reducers</a></li><li><a href="module-model_district_manage-district_manage_effects.html">district/manage/effects</a></li><li><a href="module-model_district_manage-district_manage_reducers.html">district/manage/reducers</a></li><li><a href="module-model_employee_contract-employee_contract_effects.html">employee/contract/effects</a></li><li><a href="module-model_employee_contract-employee_contract_reducers.html">employee/contract/reducers</a></li><li><a href="module-model_employee_manage-employee_manage_effects.html">employee/manage/effects</a></li><li><a href="module-model_employee_manage-employee_manage_reducers.html">employee/manage/reducers</a></li><li><a href="module-model_employee_transport-employee_transport_effects.html">employee/transport/effects</a></li><li><a href="module-model_employee_transport-employee_transport_reducers.html">employee/transport/reducers</a></li><li><a href="module-model_expense_approval-expense_approval_effects.html">expense/approval/effects</a></li><li><a href="module-model_expense_approval-expense_approval_reducers.html">expense/approval/reducers</a></li><li><a href="module-model_expense_approval-expense_approval_subscriptions.html">expense/approval/subscriptions</a></li><li><a href="module-model_expense_borrowingRepaments-expense_borrowingRepayment_effects.html">expense/borrowingRepayment/effects</a></li><li><a href="module-model_expense_borrowingRepaments-expense_costOrder_reducers.html">expense/costOrder/reducers</a></li><li><a href="module-model_expense_costOrder-expense_costOrder_effects.html">expense/costOrder/effects</a></li><li><a href="module-model_expense_costOrder-expense_costOrder_reducers.html">expense/costOrder/reducers</a></li><li><a href="module-model_expense_examineFlow-expense_examineFlow_effects.html">expense/examineFlow/effects</a></li><li><a href="module-model_expense_examineFlow-expense_examineFlow_reducers.html">expense/examineFlow/reducers</a></li><li><a href="module-model_expense_examineOrder-expense_examineOrder_effects.html">expense/examineOrder/effects</a></li><li><a href="module-model_expense_examineOrder-expense_examineOrder_reducers.html">expense/examineOrder/reducers</a></li><li><a href="module-model_expense_houseContract-expense_houseContract_effects.html">expense/houseContract/effects</a></li><li><a href="module-model_expense_houseContract-expense_houseContract_reducers.html">expense/houseContract/reducers</a></li><li><a href="module-model_expense_houseContract-expense_houseContract_subscriptions.html">expense/houseContract/subscriptions</a></li><li><a href="module-model_expense_subject-expense_subject_effects.html">expense/subject/effects</a></li><li><a href="module-model_expense_subject-expense_subject_reducers.html">expense/subject/reducers</a></li><li><a href="module-model_expense_subject-expense_subject_subscriptions.html">expense/subject/subscriptions</a></li><li><a href="module-model_expense_type-expense_type_effects.html">expense/type/effects</a></li><li><a href="module-model_expense_type-expense_type_reducers.html">expense/type/reducers</a></li><li><a href="module-model_finance_plan-finance_plan_effects.html">finance/plan/effects</a></li><li><a href="module-model_finance_plan-finance_plan_reducers.html">finance/plan/reducers</a></li><li><a href="module-model_finance_task-finance_task_effects.html">finance/task/effects</a></li><li><a href="module-model_finance_task-finance_task_reducers.html">finance/task/reducers</a></li><li><a href="module-model_financeFundsConfig-financeFundsConfig_effects.html">financeFundsConfig/effects</a></li><li><a href="module-model_financeFundsConfig-financeFundsConfig_reducers.html">financeFundsConfig/reducers</a></li><li><a href="module-model_financeRulesGenerator-financeRulesGenerator_effects.html">financeRulesGenerator/effects</a></li><li><a href="module-model_financeRulesGenerator-financeRulesGenerator_reducers.html">financeRulesGenerator/reducers</a></li><li><a href="module-model_financeSummaryManage-financeSummaryManage_effects.html">financeSummaryManage/effects</a></li><li><a href="module-model_financeSummaryManage-financeSummaryManage_reducers.html">financeSummaryManage/reducers</a></li><li><a href="module-model_financeSummaryManage-financeSummaryManage_subscriptions.html">financeSummaryManage/subscriptions</a></li><li><a href="module-model_inquireModel-inquireModel_effects.html">inquireModel/effects</a></li><li><a href="module-model_inquireModel-inquireModel_reducers.html">inquireModel/reducers</a></li><li><a href="module-model_materials-financeConfigIndex_effects.html">financeConfigIndex/effects</a></li><li><a href="module-model_materials-financeConfigIndex_reducers.html">financeConfigIndex/reducers</a></li><li><a href="module-model_materials-financeConfigTags_effects.html">financeConfigTags/effects</a></li><li><a href="module-model_materials-financeConfigTags_reducers.html">financeConfigTags/reducers</a></li><li><a href="module-model_materials-financeFundsManage_effects.html">financeFundsManage/effects</a></li><li><a href="module-model_materials-financeFundsManage_reducers.html">financeFundsManage/reducers</a></li><li><a href="module-model_materials-materials_effects.html">materials/effects</a></li><li><a href="module-model_materials-materials_reducers.html">materials/reducers</a></li><li><a href="module-model_materials-materials_subscriptions.html">materials/subscriptions</a></li><li><a href="module-model_operationManage-operationManage_effects.html">operationManage/effects</a></li><li><a href="module-model_operationManage-operationManage_reducers.html">operationManage/reducers</a></li><li><a href="module-model_supplier_manage-supplier_manage_effects.html">supplier/manage/effects</a></li><li><a href="module-model_supplier_manage-supplier_manage_reducers.html">supplier/manage/reducers</a></li><li><a href="module-model_supply_deductions-supply_deductions_effects.html">supply/deductions/effects</a></li><li><a href="module-model_supply_deductions-supply_deductions_reducers.html">supply/deductions/reducers</a></li><li><a href="module-model_supply_deductions-supply_deductSummarize_effects.html">supply/deductSummarize/effects</a></li><li><a href="module-model_supply_deductions-supply_deductSummarize_reducers.html">supply/deductSummarize/reducers</a></li><li><a href="module-model_supply_details-supply_details_effects.html">supply/details/effects</a></li><li><a href="module-model_supply_details-supply_details_reducers.html">supply/details/reducers</a></li><li><a href="module-model_supply_distribution-supply_distribution_effects.html">supply/distribution/effects</a></li><li><a href="module-model_supply_distribution-supply_distribution_reducers.html">supply/distribution/reducers</a></li><li><a href="module-model_supply_procurement-supply_procurement_effects.html">supply/procurement/effects</a></li><li><a href="module-model_supply_procurement-supply_procurement_reducers.html">supply/procurement/reducers</a></li><li><a href="module-model_supply_set-supply_set_effects.html">supply/set/effects</a></li><li><a href="module-model_supply_set-supply_set_reducers.html">supply/set/reducers</a></li><li><a href="module-model_system_city-system_city_effects.html">system/city/effects</a></li><li><a href="module-model_system_city-system_city_reducers.html">system/city/reducers</a></li><li><a href="module-model_system_download-system_download_effects.html">system/download/effects</a></li><li><a href="module-model_system_download-system_download_reducers.html">system/download/reducers</a></li><li><a href="module-model_system_manage-system_manage_effects.html">system/manage/effects</a></li><li><a href="module-model_system_manage-system_manage_reducers.html">system/manage/reducers</a></li><li><a href="module-model_system_recommendedCompany-system_recommendedCompany_effects.html">system/recommendedCompany/effects</a></li><li><a href="module-model_system_recommendedCompany-system_recommendedCompany_reducers.html">system/recommendedCompany/reducers</a></li><li><a href="module-model_system-system_effects.html">system/effects</a></li><li><a href="module-model_system-system_reducers.html">system/reducers</a></li><li><a href="module-model_system-system_subscriptions.html">system/subscriptions</a></li><li><a href="module-model_upload-upload_effects.html">upload/effects</a></li><li><a href="module-model_upload-upload_reducers.html">upload/reducers</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sun Apr 28 2019 11:25:15 GMT+0800 (CST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

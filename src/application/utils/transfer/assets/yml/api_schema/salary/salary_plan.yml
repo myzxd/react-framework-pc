@@ -1,0 +1,188 @@
+- module: 'salary_plan'
+  apis:
+  - api_ns: 'salary_plan'
+    cmd_list:
+      - summary: 服务费方案创建
+        description: '对应UI创建服务费规则'
+        cmd: create
+        params:
+          - name: platform_code
+            type: string
+            required: true
+            note: '平台code'
+            enum_values: ''
+          - name: supplier_id
+            type: object_id
+            required: true
+            note: '供应商ID'
+            enum_values: ''
+          - name: city_code
+            type: string
+            required: true
+            note: '城市code'
+            enum_values: ''
+          - name: biz_district_id
+            type: object_id
+            required: false
+            note: '商圈ID'
+            enum_values: ''
+          - name: domain
+            type: int
+            required: true
+            note: '适用范围'
+            enum_values: '2:商圈，3:城市'
+          - name: from_date
+            type: int
+            required: true
+            note: '生效起始时间(yyyymmdd)'
+            enum_values: ''
+          - name: to_date
+            type: int
+            required: true
+            note: '生效终止时间(yyyymmdd)'
+            enum_values: ''
+          - name: template
+            type: int
+            required: true
+            note: '模板'
+            enum_values: '0:空,1:模板一'
+          - name: name
+            type: string
+            required: true
+            note: '名称'
+            enum_values: '0:空,1:模板一'
+        result: {}
+        param_example:
+          platform_code: '123321'
+          supplier_id: '5826650e3d65ce2d27645763'
+          city_code: 'beijing'
+          biz_district_id: '5826650e3d65ce2d0665317f"'
+          domain: 3
+          from_date: '2018-10-09 18:59:20'
+          to_date: '2018-10-10 18:59:20'
+          template: 1
+        result_example:
+            _id: ‘5826650e3d65ce2d0665317f’
+            name: ‘啥看的’
+            platform_code: ‘123321’
+            supplier_id: ‘‘5826650e3d65ce2d0665317f’’
+            city_code: ‘123321’
+            biz_district_id: ‘5826650e3d65ce2d0665317f’’
+            state: 1
+            domain: 2
+            active_version: ’‘5826650e3d65ce2d0665317f’‘
+            draft_version: ’‘5826650e3d65ce2d0665317f’‘
+            application_version: ’‘5826650e3d65ce2d0665317f’‘
+            pending_version: ’‘5826650e3d65ce2d0665317f’‘
+            enabled_at: '2018-10-10 18:59:20'
+            disabled_at: '2018-10-10 18:59:20'
+            deleted_at: '2018-10-10 18:59:20'
+            updated_at: '2018-10-10 18:59:20'
+            created_at: '2018-10-10 18:59:20'
+            creator_id: '2018-10-10 18:59:20'
+
+
+      - summary: 服务费方案列表
+        description: '对应UI服务费方案的列表页'
+        cmd: find
+        params:
+          - name: platform_code
+            type: string
+            required: false
+            note: 平台code
+            enum_values: ''
+          - name: supplier_id
+            type: object_id
+            required: false
+            note: ‘供应商ID’
+            enum_values: ''
+          - name: city_code
+            type: string
+            required: false
+            note: ‘城市code’
+            enum_values: ''
+          - name: domain
+            type: int
+            required: false
+            note: ‘方案类型’
+            enum_values: '2商圈,3城市'
+        result:
+          type: 'api_result_set_with_meta'
+          schema: 'salary_plan_list_item'
+        param_example:
+          platform_code: '123321'
+          supplier_id: '5826650e3d65ce2d27645763'
+          city_code: 'shanghai'
+          domain: 3
+        result_example:
+          _id: '5a655eaace6d2a430f748f82'
+          platform_code: '123321'
+          platform_name: '美团'
+          supplier_id: '5a655eaace6d2a430f748f82'
+          supplier_name: '宁波松下有限公司'
+          city_code: '123321'
+          city_name: '天津'
+          biz_district_id: '5a655eaace6d2a430f748f82'
+          biz_district_name: '虹桥'
+          domain: 3
+          state: 100
+          enabled_at: '2018-10-08 18:59:20'
+          created_at: '2018-10-09 18:59:20'
+          creator_id: '5a655eaace6d2a430f748f82'
+          updated_at: '2018-10-10 18:59:20'
+          operator_id: '5a655eaace6d2a430f748f82'
+          creator_info: {}
+          operator_info: {}
+
+
+      - summary: 服务费方案详情
+        description: '对应UI结算设置各个详情页'
+        cmd: get
+        params_schema:
+          schema: 'detail_data'
+        result:
+          type: 'api_result'
+          schema: 'salary_plan_detail'
+        param_example:
+          _id: '5a655eaace6d2a430f748f82'
+        result_example:
+          _id: '5a655eaace6d2a430f748f82'
+          name: '换挡杆'
+          platform_code: '12321'
+          supplier_id: '5a655eaace6d2a430f748f82'
+          city_code: '123432'
+          city_name: '天津'
+          biz_district_id: '5a655eaace6d2a430f748f82'
+          biz_district_name: '虹桥'
+          state: 1
+          domain: 3
+          active_version: '5a655eaace6d2a430f748f82'
+          draft_version: '5a655eaace6d2a430f748f82'
+          application_version: '5a655eaace6d2a430f748f82'
+          pending_version: '5a655eaace6d2a430f748f82'
+          enabled_at: '2018-10-09 18:59:20'
+          disabled_at: '2018-10-09 18:59:20'
+          deleted_at: '2018-10-09 18:59:20'
+          updated_at: '2018-10-09 18:59:20'
+          created_at: '2018-10-09 18:59:20'
+          creator_id: '5a655eaace6d2a430f748f82'
+          operator_id: '5a655eaace6d2a430f748f82'
+
+
+      - summary: 服务费方案版本提审
+        description: '试算页面提交审核按钮'
+        cmd: submit_application
+        params:
+          - name: plan_version_id
+            type: object_id
+            required: true
+            note: ‘服务费方案版本id’
+            enum_values: ''
+        result: {}
+        param_example:
+          plan_id: '5a655eaace6d2a430f748f82'
+          plan_version_id: '5a655eaace6d2a430f748f82'
+        result_example:
+          ok: true
+          plan_id: '5a655eaace6d2a430f748f82'
+          plan_version_id: '5a655eaace6d2a430f748f82'

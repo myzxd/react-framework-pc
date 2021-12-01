@@ -1,0 +1,130 @@
+- module: 'salary_plan_rule_collection'
+  apis:
+  - api_ns: 'salary_plan_rule_collection'
+    cmd_list:
+    - summary: 服务费规则集创建
+      description: 草稿箱创建方案
+      cmd: create
+      params:
+        - name: plan_version_id
+          type: 'string'
+          required: true
+          note: '服务费方案版本id'
+          enum_values: ''
+        - name: work_type
+          type: 'int'
+          required: true
+          note: ' 人员类型'
+          enum_values: '3001:全职,3002:兼职'
+      result: {}
+      param_example:
+        plan_version_id: '5a655eaace6d2a430f748f82'
+        work_type: 3001
+      result_example:
+        _id: '5a655eaace6d2a430f748f82'
+        plan_version_id: '5a655eaace6d2a430f748f82'
+        plan_id: '5a655eaace6d2a430f748f82'
+        work_type: 3001
+        order_rules: []
+        order_rule_flag: false
+        order_rule_relation: 1
+        work_rules: []
+        work_rule_relation: 1
+        work_rule_flag: true
+        qa_rules: []
+        qa_rule_relation: 2
+        qa_rule_flag: false
+        operation_rules: []
+        operation_rule_relation: 1
+        operation_rule_flag: true
+        created_at: '2018-10-09 18:59:20'
+        updated_at: '2018-10-09 18:59:20'
+
+    - summary: 服务费规则集列表
+      description: '服务费规则集列表'
+      cmd: find
+      params:
+        - name: plan_version_id
+          type: 'string'
+          required: true
+          note: '服务费方案版本id'
+          enum_values: ''
+      result:
+        type: 'api_result_set_with_meta'
+        schema: 'salary_plan_rule_collection_list_item'
+      param_example:
+        plan_version_id: '5a655eaace6d2a430f748f82'
+      result_example:
+          _id: '5a655eaace6d2a430f748f82'
+          plan_id: '5a655eaace6d2a430f748f82'
+          plan_version_id: '5a655eaace6d2a430f748f82'
+          work_type: 3001
+          order_rules: []
+          order_rule_flag: false
+          order_rule_relation: 1
+          work_rules: []
+          work_rule_relation: 1
+          work_rule_flag: true
+          qa_rules: []
+          qa_rule_relation: 2
+          qa_rule_flag: false
+          operation_rules: []
+          operation_rule_relation: 1
+          operation_rule_flag: true
+          created_at: '2018-10-09 18:59:20'
+          updated_at: '2018-10-09 18:59:20'
+
+    - summary: 服务费规则集子项启/禁用
+      description: '服务费规则集子项启/禁用'
+      cmd: toggle_on_off
+      params:
+        - name: rule_collection_id
+          type: 'string'
+          required: true
+          note: '服务费规则集ID'
+          enum_values: ''
+        - name: rule_flag
+          type: 'bool'
+          required: true
+          note: '启用、禁用'
+          enum_values: 'true:启用，false:禁用'
+        - name: type
+          type: 'int'
+          required: true
+          note: '类型'
+          enum_values: '1：单量提成，2：出勤奖励，3质量奖励，4：管理奖励'
+      result: {}
+      param_example:
+        rule_collection_id: '5a655eaace6d2a430f748f82'
+        work_type: 3002
+      result_example:
+         ok: true
+         rule_collection_id: '5a655eaace6d2a430f748f82'
+
+    - summary: 服务费计算规则集适用关系
+      description: 服务费计算规则集是互斥还是互补关系
+      cmd: update_rule_relation
+      params:
+        - name: rule_collection_id
+          type: 'string'
+          required: true
+          note: '服务费规则集ID'
+          enum_values: ''
+        - name: rule_relation
+          type: 'int'
+          required: true
+          note: '互斥、互补'
+          enum_values: '规则关系 1（互斥）2（互补）'
+        - name: type
+          type: 'int'
+          required: true
+          note: '类型'
+          enum_values: '1：单量提成，2：出勤奖励，3质量奖励，4：管理奖励'
+      result: {}
+      param_example:
+        id: '5a655eaace6d2a430f748f82'
+        exclusive: True
+      result_example:
+        ok: true
+        plan_version_id: '5a655eaace6d2a430f748f82'
+        plan_id: '5a655eaace6d2a430f748f82'

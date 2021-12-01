@@ -1,0 +1,40 @@
+[
+  {
+    "title": "应用与服务",
+    "group": [
+      {
+        "title":"BOSS之家",
+        "links":[
+          { "title":"部门管理", "url":"https://boss-dev.aoaosong.com/#/Organization/Manage/Department" },
+          { "title":"人员档案", "url":"https://boss-dev.aoaosong.com/#/Employee/Manage" },
+          { "title":"物资设置", "url":"https://boss-dev.aoaosong.com/#/Supply/Setting" },
+          { "title":"付款审批", "url":"https://boss-dev.aoaosong.com/#/Expense/Manage/ExamineOrder" },
+          { "title":"服务费方案", "url":"https://boss-dev.aoaosong.com/#/Finance/Plan" },
+          { "title":"业主团队管理", "url":"https://boss-dev.aoaosong.com/#/Team/Manager" },
+          { "title":"私教团队管理", "url":"https://boss-dev.aoaosong.com/#/Team/Teacher/Manage" },
+          { "title":"我的账户", "url":"https://boss-dev.aoaosong.com/#/Account" }
+        ]
+      },
+      {
+        "title":"BOSS老板",
+        "links":[
+          { "title":"人员档案", "url":"https://boss-dev.aoaosong.com:9040/#/Employee/Manage" },
+          { "title":"成员管理", "url":"https://boss-dev.aoaosong.com:9040/#/Team/Manage" },
+          { "title":"服务费方案", "url":"https://boss-dev.aoaosong.com:9040/#/Finance/Plan" }
+        ]
+      },
+      {
+        "title":"数据中台",
+        "links":[
+          { "title":"经营团队", "url":"https://boss-quhuo.aoaosong.com:9061/qplus-finance/databook" },
+          { "title":"新财报", "url":"https://boss-quhuo.aoaosong.com:9061/databook/qplus-finance/team" },
+          { "title":"决算报表", "url":"https://boss-quhuo.aoaosong.com:9061/finance/databook" },
+          { "title":"成本费用", "url":"https://boss-quhuo.aoaosong.com:9061/cost-order/list" },
+          { "title":"收入提报", "url":"https://boss-quhuo.aoaosong.com:9061/qplus-revenue/upload" },
+          { "title":"骑手罗盘", "url":"https://bj-qlife-datahub.quhuo.cn/compass/dashboard/owner?s=a&month=202006&owner_id=5d4d650d887d1f25b2556f82" },
+          { "title":"骑手监控", "url":"https://boss-quhuo.aoaosong.com:9061/knight/monitor" }
+        ]
+      }
+    ]
+  }
+]

@@ -1,0 +1,25 @@
+.app-comp-oa-card{
+    float: left;
+    width: 12.5%;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+.app-comp-oa-card div {
+  width: 20%;
+  margin: 15px 0;
+  position: relative;
+}
+.app-comp-oa-card div span {
+  position: absolute;
+  right: -5px;
+  top: -5px;
+  cursor: pointer;
+}
+.app-comp-oa-card div img{
+  width: 100%;
+  display: block;
+  cursor: pointer;
+}

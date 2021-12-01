@@ -1,0 +1,168 @@
+- module: 'payroll_adjustment_item'
+  apis:
+  - api_ns: 'payroll_adjustment_item'
+    cmd_list:
+      - summary: 新建扣补款项目
+        description: '对应UI页:扣补款项目自定义新增项目按钮'
+        cmd: create
+        params:
+          - name: platform_code
+            type: string
+            required: true
+            note: '平台'
+            enum_values: ''
+          - name: group
+            type: int
+            required: true
+            note: '款项组(人员扣款11001,11002,11003,11004)'
+            enum_values: ''
+          - name: identifier
+            type: string
+            required: true
+            note: '项目编号'
+            enum_values: ''
+          - name: name
+            type: string
+            required: true
+            note: '项目名称'
+            enum_values: ''
+          - name: definition
+            type: string
+            required: false
+            note: '项目定义'
+            enum_values: ''
+          - name: state
+            type: int
+            required: true
+            note: '状态'
+            enum_values: ''
+        result: {}
+        param_example:
+          platform_code: 'elem'
+          group: 11001
+          identifier: '123456'
+          name: '骑士扣款'
+          definition: '骑士扣款'
+          state: 100
+        result_example:
+          ok: true
+          _id: '5a655eaace6d2a430f748f82'
+          platform_code: 'elem'
+          group: 11001
+          identifier: '123456'
+          name: '骑士扣款'
+          definition: '骑士扣款'
+          state: 100
+
+      - summary: 编辑扣补款项目
+        description: '对应UI页:扣补款项目自定义编辑按钮'
+        cmd: update
+        params:
+          - name: _id
+            type: object_id
+            required: true
+            note: '补扣款项目ID'
+            enum_values: ''
+          - name: identifier
+            type: string
+            required: true
+            note: '项目编号'
+            enum_values: ''
+          - name: name
+            type: string
+            required: true
+            note: '项目名称'
+            enum_values: ''
+          - name: definition
+            type: string
+            required: false
+            note: '项目定义'
+            enum_values: ''
+          - name: state
+            type: int
+            required: false
+            note: '状态'
+            enum_values: ''
+        result: {}
+        param_example:
+          _id: '5a655eaace6d2a430f748f82'
+          platform_code: 'elem'
+          group: 11001
+          identifier: '123456'
+          name: '骑士扣款'
+          definition: '骑士扣款'
+          state: 100
+        result_example:
+          ok: true
+          _id: '5a655eaace6d2a430f748f82'
+          platform_code: 'elem'
+          group: 11001
+          identifier: '123456'
+          name: '骑士扣款'
+          definition: '骑士扣款'
+          state: 100
+
+      - summary: 扣补款项目启用禁用
+        description: '对应UI页:扣补款项目自定义启用禁用按钮'
+        cmd: toggle
+        params:
+          - name: _id
+            type: object_id
+            required: true
+            note: '补扣款项目ID'
+            enum_values: ''
+          - name: state
+            type: int
+            required: true
+            note: '状态'
+            enum_values: ''
+        result: {}
+        param_example:
+          _id: '5a655eaace6d2a430f748f82'
+          state: 100
+        result_example:
+          ok: true
+          _id: '5a655eaace6d2a430f748f82'
+
+      - summary: 扣补款项目列表
+        description: '对应UI页:扣补款项目自定义列表'
+        cmd: find
+        params:
+          - name: platform_code
+            type: string
+            required: false
+            note: '平台code'
+            enum_values: ''
+          - name: supplier_id
+            type: object_id
+            required: false
+            note: '供应商ID'
+            enum_values: ''
+          - name: group
+            type: int
+            required: false
+            note: '款项组(人员扣款11001,11002,11003,11004)'
+            enum_values: ''
+          - name: state
+            type: int
+            required: false
+            note: '状态'
+            enum_values: ''
+        result:
+          type: 'api_result_set_with_meta'
+          schema: 'payroll_adjustment_item_list_item'
+        param_example:
+          platform_code: 'elem'
+          supplier_id: '5a655eaace6d2a430f748f82'
+          group: 11001
+          state: 100
+        result_example:
+          ok: true
+          _id: '5a655eaace6d2a430f748f82'
+          group: 11001
+          identifier: '123456'
+          name: '骑士扣款'
+          definition: '骑士扣款'
+          created_at: '2018-10-10 18:18:18'
+          operator_id: '5a655eaace6d2a430f748f82'
+          state: 100

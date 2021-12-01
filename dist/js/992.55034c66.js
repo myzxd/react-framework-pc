@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkaoaoBoss=self.webpackChunkaoaoBoss||[]).push([[992],{10992:function(a,o,e){e.r(o);var n=e(67294),t=e(19343);o.default=function(a){var o=a.location;return n.createElement(t.Z,{location:o})}}}]);

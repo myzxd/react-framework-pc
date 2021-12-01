@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: models/expense/examineFlow.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: models/expense/examineFlow.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * 审批流设置
+ * @module model/expense/examineFlow
+ **/
+/* eslint no-underscore-dangle: ["error", { "allow": ["_meta"] }]*/
+import is from 'is_js';
+import { message } from 'antd';
+
+import {
+  fetchExamineFlows,
+  updateExamineFlowState,
+  deleteExamineFlow,
+  updateExamineFlowNode,
+  deleteExamineFlowNode,
+  updateExamineFlow,
+  createExamineFlowNode,
+  createExamineFlow,
+  fetchExamineDetail,
+  fetchExamineFlowConfig,
+  updateExamineFlowConfig,
+  updateSalaryPlanConfig,
+  fetchSalaryPlanConfig,
+  fetchSalaryDistribute,
+  updateSalaryDistribute,
+} from '../../services/expense';
+
+import { RequestMeta, ResponseMeta, ApplicationFlowTemplateDetail } from '../../application/object/';
+import { OaApplicationFlowTemplateState } from '../../application/define';
+
+export default {
+  /**
+   * 命名空间
+   * @default
+   */
+  namespace: 'expenseExamineFlow',
+  /**
+   * 状态树
+   * @prop {array} examineList 审批流列表
+   * @prop {array} examineName 申请人名字
+   * @prop {array} examineTree 申请人名字树
+   * @prop {array} storeExamineTree 保存搜索之前
+   * @prop {object} salaryPlanConfig 审批流配置数据 - 薪资发放
+   * @prop {object} examineDetail     审批流详情
+   * @prop {object} examineFlowConfig 审批流配置数据 - 薪资方案
+   * @prop {object} salaryDistribute 审批流配置数据 - 薪资发放
+   * @prop {object} examineFlowDetail 审批流数据(使用命名空间隔离数据，防止相同组件的数据影响)
+   */
+  state: {
+    // 审批流列表
+    examineList: [],
+    // 申请人名字
+    examineName: [],
+    // 申请人名字树
+    examineTree: [],
+    // 保存搜索之前
+    storeExamineTree: [],
+    // 审批流详情
+    examineDetail: {},
+    // 审批流设置数据
+    examineFlowConfig: {},
+    // 审批流配置数据 - 薪资方案
+    salaryPlanConfig: {},
+    // 审批流配置数据 - 薪资发放
+    salaryDistribute: {},
+    // 审批流数据(使用命名空间隔离数据，防止相同组件的数据影响)
+    examineFlowDetail: {},
+  },
+  /**
+   * @namespace expense/examineFlow/effects
+   */
+  effects: {
+
+    /**
+     * 获取审批流列表
+     * @param {number}  bizType        业务成本类型
+     * @param {number}  platformCodes  状态
+     * @memberof module:model/expense/examineFlow~expense/examineFlow/effects
+     */
+    * fetchExamineFlows({ payload }, { call, put }) {
+      // 请求列表的meta信息
+      const params = {
+        _meta: RequestMeta.mapper(payload),
+      };
+      // 状态
+      if (is.not.empty(payload.state) &amp;&amp; is.existy(payload.state)) {
+        params.state = [Number(payload.state)];
+      } else {
+        // 默认不展示删除的
+        params.state = [
+          OaApplicationFlowTemplateState.normal,
+          OaApplicationFlowTemplateState.disable,
+          OaApplicationFlowTemplateState.draft,
+        ];
+      }
+      // 状态
+      if (is.existy(payload.platformCodes) &amp;&amp; is.not.empty(payload.platformCodes)) {
+        params.platform_codes = [payload.platformCodes];
+      }
+      // 业务类型 成本或非成本
+      if (is.not.empty(payload.bizType) &amp;&amp; is.existy(payload.bizType)) {
+        params.biz_type = [payload.bizType];
+      }
+      const result = yield call(fetchExamineFlows, params);
+      if (result === undefined) {
+        return;
+      }
+      yield put({ type: 'reduceExamineFlows', payload: result });
+    },
+
+    /**
+     * 获取审批流详情
+     * @param {string}  id       审批单id
+     * @memberof module:model/expense/examineFlow~expense/examineFlow/effects
+     */
+    * fetchExamineDetail({ payload }, { call, put }) {
+      // 审批单id
+      if (is.empty(payload.id) || is.not.existy(payload.id)) {
+        return message.error('无法获取审批流详情，审批流id不能为空');
+      }
+      const params = {
+        id: payload.id, // 审批流id
+      };
+      const result = yield call(fetchExamineDetail, params);
+      if (is.existy(result) &amp;&amp; is.not.empty(result)) {
+        yield put({ type: 'reduceExamineDetail', payload: result });
+      }
+    },
+
+    /**
+     * 新建审批流
+     * @param {string}   name      审批流名称
+     * @param {string}   bizType   业务分类
+     * @param {function} onSuccessCallback  成功回调
+     * @param {function} onFailureCallback  失败回调
+     * @memberof module:model/expense/examineFlow~expense/examineFlow/effects
+     */
+    * createExamineFlow({ payload }, { put }) {
+      if (is.not.existy(payload.name) || is.empty(payload.name)) {
+        return message.error('审批流名称不能为空');
+      }
+      if (is.not.existy(payload.bizType) || is.empty(payload.bizType)) {
+        return message.error('业务分类参数不能为空');
+      }
+      const params = {
+        record: {
+          name: payload.name,
+          biz_type: payload.bizType,
+        },
+      };
+      // 业务请求
+      const request = {
+        params, // 接口参数
+        service: createExamineFlow,  // 接口
+        onVerifyCallback: result => is.existy(result) &amp;&amp; is.not.empty(result),
+        onSuccessCallback: payload.onSuccessCallback, // 成功回调
+        onFailureCallback: payload.onFailureCallback, // 失败回调
+      };
+      yield put({ type: 'applicationCore/requestWithCallback', payload: request });
+    },
+
+    /**
+     * 编辑审批流
+     * @param {string}   id        审批单id
+     * @param {string}   name      审批流名称
+     * @param {string}   bizType   业务分类
+     * @param {string}   note      说明
+     * @param {array} costCatalogScope  限定仅用于本审批流的费用分组类型id列表
+     * @param {array} excludeCostCatalogScope  限定仅用于本审批流的费用分组类型id列表
+     * @param {array} supplierIds    供应商
+     * @param {array} platformCodes  平台
+     * @param {array} cityCodes      城市
+     * @param {array} bizDistrictIds 商圈
+     * @param {number} template      默认模版
+     * @memberof module:model/expense/examineFlow~expense/examineFlow/effects
+     */
+    * updateExamineFlow({ payload }, { put }) {
+      // 审批流ID
+      if (is.empty(payload.id) || is.not.existy(payload.id)) {
+        return message.error('审批流ID不能为空，无法创建审批流节点');
+      }
+      const params = {
+        id: payload.id, // 审批流ID
+        record: {},
+      };
+      // 审批流名称
+      if (is.not.empty(payload.name) &amp;&amp; is.existy(payload.name)) {
+        params.record.name = payload.name;
+      }
+      // 业务分类  1 成本审批流  90 非成本审批流
+      if (is.not.empty(payload.bizType) &amp;&amp; is.existy(payload.bizType)) {
+        params.record.biz_type = Number(payload.bizType);
+      }
+      // 说明
+      if (is.not.empty(payload.note) &amp;&amp; is.existy(payload.note)) {
+        params.record.note = payload.note;
+      }
+      // 限定仅用于本审批流的费用分组类型id列表
+      if (is.not.empty(payload.costCatalogScope) &amp;&amp; is.existy(payload.costCatalogScope)) {
+        params.record.cost_catalog_scope = payload.costCatalogScope;
+      }
+      // 限定不可用于本审批流的费用分组类型id列表
+      if (is.not.empty(payload.excludeCostCatalogScope) &amp;&amp; is.existy(payload.excludeCostCatalogScope)) {
+        params.record.exclude_cost_catalog_scope = payload.excludeCostCatalogScope;
+      }
+      // 平台
+      if (is.not.empty(payload.platformCodes) &amp;&amp; is.existy(payload.platformCodes)) {
+        params.record.platform_codes = [payload.platformCodes];
+      }
+      // 供应商
+      if (is.not.empty(payload.supplierIds) &amp;&amp; is.existy(payload.supplierIds)) {
+        params.record.supplier_ids = [payload.supplierIds];
+      }
+      // 城市
+      if (is.not.empty(payload.cityCodes) &amp;&amp; is.existy(payload.cityCodes)) {
+        params.record.city_codes = [payload.cityCodes];
+      }
+      // 商圈
+      if (is.not.empty(payload.bizDistrictIds) &amp;&amp; is.existy(payload.bizDistrictIds)) {
+        params.record.biz_district_ids = [payload.bizDistrictIds];
+      }
+      // 默认模版
+      if (is.not.empty(payload.template) &amp;&amp; is.existy(payload.template)) {
+        params.record.extra_ui_options = { form_template: payload.template };
+      }
+      // 业务请求
+      const request = {
+        params, // 接口参数
+        service: updateExamineFlow,  // 接口
+        onVerifyCallback: result => is.existy(result) &amp;&amp; is.not.empty(result),
+        onSuccessCallback: payload.onSuccessCallback, // 成功回调
+        onFailureCallback: payload.onFailureCallback, // 失败回调
+      };
+      yield put({ type: 'applicationCore/requestWithCallback', payload: request });
+    },
+
+     /**
+     * 删除审批流
+     * @param {string}   flowId       审批流id
+     * @param {function} onSuccessCallback  成功回调
+     * @param {function} onFailureCallback  失败回调
+     * @memberof module:model/expense/examineFlow~expense/examineFlow/effects
+     */
+    * deleteExamineFlow({ payload }, { put }) {
+      // 审批流id
+      if (is.empty(payload.flowId) || is.not.existy(payload.flowId)) {
+        return message.error('无法删除，审批流id不能为空');
+      }
+
+      const params = {
+        id: payload.flowId, // 审批流id
+      };
+
+      // 业务请求
+      const request = {
+        params, // 接口参数
+        service: deleteExamineFlow,  // 接口
+        onSuccessCallback: payload.onSuccessCallback, // 成功回调
+        onFailureCallback: payload.onFailureCallback, // 失败回调
+      };
+      yield put({ type: 'applicationCore/requestWithCallback', payload: request });
+    },
+
+    /**
+     * 启用审批流
+     * @param {string}   flowId       审批流id
+     * @param {function} onSuccessCallback  成功回调
+     * @param {function} onFailureCallback  失败回调
+     * @memberof module:model/expense/examineFlow~expense/examineFlow/effects
+     */
+    * updateExamineFlowByEnable({ payload }, { put }) {
+      const params = {
+        flowId: payload.flowId,
+        flag: true,
+        onSuccessCallback: payload.onSuccessCallback, // 成功回调
+        onFailureCallback: payload.onFailureCallback, // 失败回调
+      };
+      yield put({ type: 'updateExamineFlowState', payload: params });
+    },
+
+    /**
+     * 禁用审批流
+     * @param {string}   flowId       审批流id
+     * @param {function} onSuccessCallback  成功回调
+     * @param {function} onFailureCallback  失败回调
+     * @memberof module:model/expense/examineFlow~expense/examineFlow/effects
+     */
+    * updateExamineFlowByDisable({ payload }, { put }) {
+      const params = {
+        flowId: payload.flowId,
+        flag: false,
+        onSuccessCallback: payload.onSuccessCallback, // 成功回调
+        onFailureCallback: payload.onFailureCallback, // 失败回调
+      };
+      yield put({ type: 'updateExamineFlowState', payload: params });
+    },
+
+    // 更新审批流状态（似有函数）
+    // TODO: @王晋 组件未使用,删除
+    * updateExamineFlowState({ payload }, { put }) {
+      // 审批流id
+      if (is.empty(payload.flowId) || is.not.existy(payload.flowId)) {
+        return message.error('无法更新，审批流id不能为空');
+      }
+      // true: 启用 false: 停用
+      if (is.empty(payload.flag) || is.not.existy(payload.flag)) {
+        return message.error('无法更新，审批流状态不能为空');
+      }
+
+      const params = {
+        id: payload.flowId, // 审批流id
+        flag: payload.flag, // 启用|禁用
+      };
+
+      // 业务请求
+      const request = {
+        params, // 接口参数
+        service: updateExamineFlowState,  // 接口
+        onSuccessCallback: payload.onSuccessCallback, // 成功回调
+        onFailureCallback: payload.onFailureCallback, // 失败回调
+      };
+      yield put({ type: 'applicationCore/requestWithCallback', payload: request });
+    },
+
+    /**
+     * 添加审批流节点
+     * @param {string}   id        审批单id
+     * @param {number}   indexNum  流程节点索引序号
+     * @param {string}   name      节点名字
+     * @param {string}   accountIds 审批人
+     * @param {string}   approveMode 审批规则
+     * @param {number}   pickMode    节点审批指派
+     * @param {string}   isPaymentNode 付款节点
+     * @param {string}   canUpdateCostRecord 特殊节点
+     * @param {number}   costUpdateRule     金额调整规则
+     * @memberof module:model/expense/examineFlow~expense/examineFlow/effects
+     */
+    * createExamineFlowNode({ payload }, { put }) {
+      if (is.empty(payload.id) || is.not.existy(payload.id)) {
+        return message.error('审批流id不能为空，无法添加审批流节点');
+      }
+      const params = {
+        flow_id: payload.id,
+        record: {},  // 节点信息
+      };
+      // 流程节点索引序号
+      if (is.not.empty(payload.record.indexNum) &amp;&amp; is.existy(payload.record.indexNum)) {
+        params.record.index_num = payload.record.indexNum;
+      }
+      // 节点名字
+      if (is.not.empty(payload.record.name) &amp;&amp; is.existy(payload.record.name)) {
+        params.record.name = payload.record.name;
+      }
+      // 审批人
+      if (is.not.empty(payload.record.accountIds) &amp;&amp; is.existy(payload.record.accountIds)) {
+        params.record.account_ids = payload.record.accountIds;
+      }
+      // 审批规则
+      if (is.not.empty(payload.record.approveMode) &amp;&amp; is.existy(payload.record.approveMode)) {
+        params.record.approve_mode = Number(payload.record.approveMode);
+      }
+      // 审批指派
+      if (is.not.empty(payload.record.pickMode) &amp;&amp; is.existy(payload.record.pickMode)) {
+        params.record.pick_mode = Number(payload.record.pickMode);
+      }
+      // 付款节点
+      if (is.not.empty(payload.record.isPaymentNode) &amp;&amp; is.existy(payload.record.isPaymentNode)) {
+        params.record.is_payment_node = payload.record.isPaymentNode;
+      }
+      // 特殊节点
+      if (is.not.empty(payload.record.canUpdateCostRecord) &amp;&amp; is.existy(payload.record.canUpdateCostRecord)) {
+        params.record.can_update_cost_record = payload.record.canUpdateCostRecord;
+      }
+      // 金额调整规则
+      if (is.not.empty(payload.record.costUpdateRule) &amp;&amp; is.existy(payload.record.costUpdateRule)) {
+        params.record.cost_update_rule = Number(payload.record.costUpdateRule);
+      }
+      const request = {
+        params, // 接口参数
+        service: createExamineFlowNode,  // 接口
+        onSuccessCallback: payload.onSuccessCallback, // 成功回调
+        onFailureCallback: payload.onFailureCallback, // 失败回调
+      };
+      yield put({ type: 'applicationCore/requestWithCallback', payload: request });
+    },
+
+     /**
+     * 修改审批流节点
+     * @param {string}   id        审批单id
+     * @param {number}   indexNum  流程节点索引序号
+     * @param {string}   name      节点名字
+     * @param {string}   accountIds 审批人
+     * @param {string}   approveMode 审批规则
+     * @param {string}   isPaymentNode 付款节点
+     * @param {string}   canUpdateCostRecord 特殊节点
+     * @param {number}   costUpdateRule     费用记录修改规则 金额调整
+     * @param {number}   approveMode        节点审批模式
+     * @param {number}   pickMode           节点审批指派
+     * @memberof module:model/expense/examineFlow~expense/examineFlow/effects
+     */
+    * updateExamineFlowNode({ payload }, { put }) {
+      // 审批节点id
+      if (is.empty(payload.nodeId) || is.not.existy(payload.nodeId)) {
+        return message.error('审批节点ID不能为空，无法更新审批流节点');
+      }
+      // 审批流ID
+      if (is.empty(payload.flowId) || is.not.existy(payload.flowId)) {
+        return message.error('审批流ID不能为空，无法更新审批流节点');
+      }
+      // 审批人ID列表
+      if (is.empty(payload.record.accountIds) || is.not.existy(payload.record.accountIds)) {
+        return message.error('审批人ID列表不能为空，无法更新审批流节点');
+      }
+      const params = {
+        id: payload.nodeId,       // 审批节点id
+        flow_id: payload.flowId,  // 审批流ID
+        record: {
+          account_ids: payload.record.accountIds, // 审批人ID列表
+        },
+      };
+      // 流程节点索引序号
+      if (is.not.empty(payload.record.indexNum) &amp;&amp; is.existy(payload.record.indexNum)) {
+        params.record.index_num = payload.record.indexNum;
+      }
+      // 节点名称
+      if (is.not.empty(payload.record.name) &amp;&amp; is.existy(payload.record.name)) {
+        params.record.name = payload.record.name;
+      }
+      // 节点审批模式
+      if (is.not.empty(payload.record.approveMode) &amp;&amp; is.existy(payload.record.approveMode)) {
+        params.record.approve_mode = Number(payload.record.approveMode);
+      }
+      // 审批指派
+      if (is.not.empty(payload.record.pickMode) &amp;&amp; is.existy(payload.record.pickMode)) {
+        params.record.pick_mode = Number(payload.record.pickMode);
+      }
+      // 付款节点
+      if (is.not.empty(payload.record.isPaymentNode) &amp;&amp; is.existy(payload.record.isPaymentNode)) {
+        params.record.is_payment_node = payload.record.isPaymentNode;
+      }
+      // 特殊节点
+      if (is.not.empty(payload.record.canUpdateCostRecord) &amp;&amp; is.existy(payload.record.canUpdateCostRecord)) {
+        params.record.can_update_cost_record = !!payload.record.canUpdateCostRecord;
+      }
+      // 费用记录修改规则 金额调整
+      if (is.not.empty(payload.record.costUpdateRule) &amp;&amp; is.existy(payload.record.costUpdateRule)) {
+        params.record.cost_update_rule = Number(payload.record.costUpdateRule);
+      }
+      const request = {
+        params, // 接口参数
+        service: updateExamineFlowNode,  // 接口
+        onSuccessCallback: payload.onSuccessCallback, // 成功回调
+        onFailureCallback: payload.onFailureCallback, // 失败回调
+      };
+      yield put({ type: 'applicationCore/requestWithCallback', payload: request });
+    },
+
+    /**
+     * 删除审批流节点
+     * @param {string}   flowId       审批流id
+     * @param {string}   nodeId       节点id
+     * @param {function} onSuccessCallback  成功回调
+     * @param {function} onFailureCallback  失败回调
+     * @memberof module:model/expense/examineFlow~expense/examineFlow/effects
+     */
+    * deleteExamineFlowNode({ payload }, { put }) {
+      // 审批节点id
+      if (is.empty(payload.nodeId) || is.not.existy(payload.nodeId)) {
+        return message.error('审批节点ID不能为空，无法更新审批流节点');
+      }
+      // 审批流ID
+      if (is.empty(payload.flowId) || is.not.existy(payload.flowId)) {
+        return message.error('审批流ID不能为空，无法更新审批流节点');
+      }
+
+      const params = {
+        id: payload.flowId,       // 审批流ID
+        node_id: payload.nodeId,  // 节点id
+      };
+      const request = {
+        params, // 接口参数
+        service: deleteExamineFlowNode,  // 接口
+        onSuccessCallback: payload.onSuccessRemoveCallback, // 成功回调
+        onFailureCallback: payload.onFailureCallback, // 失败回调
+      };
+      yield put({ type: 'applicationCore/requestWithCallback', payload: request });
+    },
+
+    /**
+     * 获取审批流相关设置
+     * @todo 接口需升级优化
+     * @memberof module:model/expense/examineFlow~expense/examineFlow/effects
+     */
+    * fetchExamineFlowConfig({ payload = {} }, { call, put }) {
+      // 平台
+      if (is.not.existy(payload.platforms) || is.empty(payload.platforms)) {
+        return message.error('操作失败，平台不能为空');
+      }
+      const params = {
+        platform_codes: payload.platforms,
+      };
+
+      // 特性, 默认为house_contract
+      if (is.existy(payload.feature) &amp;&amp; is.not.empty(payload.feature)) {
+        params.feature = payload.feature;
+      }
+
+      const result = yield call(fetchExamineFlowConfig, params);
+      if (result === undefined) {
+        return;
+      }
+      yield put({ type: 'reduceExamineFlowsConfig', payload: result });
+    },
+
+    /**
+     * 更新审批流相关设置
+     * @param {function} onSuccessCallback  成功回调
+     * @param {function} onFailureCallback  失败回调
+     * @memberof module:model/expense/examineFlow~expense/examineFlow/effects
+     */
+    * updateExamineFlowConfig({ payload }, { put }) {
+      // 平台
+      if (is.not.existy(payload.platforms) || is.empty(payload.platforms)) {
+        return message.error('操作失败，平台不能为空');
+      }
+      const params = {
+        options: payload.options,
+        platform_codes: payload.platforms,
+      };
+      // 特性, 默认为house_contract
+      if (is.existy(payload.feature) &amp;&amp; is.not.empty(payload.feature)) {
+        params.feature = payload.feature;
+      }
+      const request = {
+        params, // 接口参数
+        service: updateExamineFlowConfig,  // 接口
+        onSuccessCallback: payload.onSuccessCallback, // 成功回调
+        onFailureCallback: payload.onFailureCallback, // 失败回调
+      };
+      yield put({ type: 'applicationCore/requestWithCallback', payload: request });
+    },
+
+    /**
+     * 获取审批流配置 - 薪资方案
+     * @todo 接口需升级优化
+     * @memberof module:model/expense/examineFlow~expense/examineFlow/effects
+     */
+    * fetchSalaryPlanConfig({ payload = {} }, { call, put }) {
+      // 平台
+      if (is.not.existy(payload.platforms) || is.empty(payload.platforms)) {
+        return message.error('操作失败，平台不能为空');
+      }
+      const params = {
+        feature: 'salary_plan',
+        platform_codes: payload.platforms,
+      };
+      const result = yield call(fetchSalaryPlanConfig, params);
+      if (result === undefined) {
+        return;
+      }
+      yield put({ type: 'reduceSalaryPlanConfig', payload: result });
+    },
+
+    /**
+     * 更新审批流相关设置 - 薪资方案
+     * @param {function} onSuccessCallback  成功回调
+     * @param {function} onFailureCallback  失败回调
+     * @memberof module:model/expense/examineFlow~expense/examineFlow/effects
+     */
+    * updateSalaryPlanConfig({ payload }, { put }) {
+      // 平台
+      if (is.not.existy(payload.platforms) || is.empty(payload.platforms)) {
+        return message.error('操作失败，平台不能为空');
+      }
+      const params = {
+        feature: 'salary_plan',
+        options: payload.options,
+        platform_codes: payload.platforms,
+      };
+      const request = {
+        params,   // 接口参数
+        service: updateSalaryPlanConfig, // 接口
+        onSuccessCallback: payload.onSuccessCallback, // 成功回调
+        onFailureCallback: payload.onFailureCallback, // 失败回调
+      };
+      yield put({ type: 'applicationCore/requestWithCallback', payload: request });
+    },
+
+     /**
+     *  获取审批流配置 - 薪资发放
+     * @todo 接口需升级优化
+     * @memberof module:model/expense/examineFlow~expense/examineFlow/effects
+     */
+    * fetchSalaryDistribute({ payload = {} }, { call, put }) {
+      // 平台
+      if (is.not.existy(payload.platforms) || is.empty(payload.platforms)) {
+        return message.error('操作失败，平台不能为空');
+      }
+      const params = {
+        feature: 'salary_payment',
+        platform_codes: payload.platforms,
+      };
+      const result = yield call(fetchSalaryDistribute, params);
+      if (result === undefined) {
+        return;
+      }
+      yield put({ type: 'reduceSalaryDistribute', payload: result });
+    },
+
+     /**
+     * 更新审批流相关配置 - 薪资发放
+     * @param {function} onSuccessCallback  成功回调
+     * @param {function} onFailureCallback  失败回调
+     * @memberof module:model/expense/examineFlow~expense/examineFlow/effects
+     */
+    * updateSalaryDistribute({ payload }, { put }) {
+      // 平台
+      if (is.not.existy(payload.platforms) || is.empty(payload.platforms)) {
+        return message.error('操作失败，平台不能为空');
+      }
+      const params = {
+        feature: 'salary_payment',
+        options: payload.options,
+        platform_codes: payload.platforms,
+      };
+      const request = {
+        params,   // 接口参数
+        service: updateSalaryDistribute, // 接口
+        onSuccessCallback: payload.onSuccessCallback, // 成功回调
+        onFailureCallback: payload.onFailureCallback, // 失败回调
+      };
+      yield put({ type: 'applicationCore/requestWithCallback', payload: request });
+    },
+
+    /**
+     * 获取审批流详情(使用命名空间隔离数据，防止相同组件的数据影响)
+     * @param {string}  id       审批流id
+     * @memberof module:model/expense/examineFlow~expense/examineFlow/effects
+     */
+    * fetchExamineFlowDetail({ payload }, { call, put }) {
+      // 审批单id
+      if (is.empty(payload.id) || is.not.existy(payload.id)) {
+        return;
+      }
+      const params = {
+        id: payload.id, // 审批流id
+      };
+      const result = yield call(fetchExamineDetail, params);
+      const namespace = payload.namespace ? payload.namespace : 'default';
+      if (is.existy(result) &amp;&amp; is.not.empty(result)) {
+        yield put({ type: 'reduceexamineFlowDetail', payload: { namespace, result } });
+      }
+    },
+
+  },
+ /**
+   * @namespace expense/examineFlow/reducers
+   */
+  reducers: {
+    /**
+     * 获取审批流列表
+     * @returns {object} 更新 examineList
+     * @memberof module:model/expense/examineFlow~expense/examineFlow/reducers
+     */
+    reduceExamineFlows(state, action) {
+      const examineList = {
+        meta: ResponseMeta.mapper(action.payload._meta),
+        data: ApplicationFlowTemplateDetail.mapperEach(action.payload.data, ApplicationFlowTemplateDetail),
+      };
+      return { ...state, examineList };
+    },
+
+    /**
+     * 获取审批流详情
+     * @returns {object} 更新 examineDetail
+     * @memberof module:model/expense/examineFlow~expense/examineFlow/reducers
+     */
+    reduceExamineDetail(state, action) {
+      const examineDetail = ApplicationFlowTemplateDetail.mapper(action.payload, ApplicationFlowTemplateDetail);
+      return { ...state, examineDetail };
+    },
+
+    /**
+     * 获取审批流详情
+     * @returns {object} 更新 examineFlowConfig
+     * @memberof module:model/expense/examineFlow~expense/examineFlow/reducers
+     */
+    reduceExamineFlowsConfig(state, action) {
+      const examineFlowConfig = action.payload;
+      return { ...state, examineFlowConfig };
+    },
+
+     /**
+     * 获取审批流配置数据 - 薪资方案
+     * @returns {object} 更新 salaryPlanConfig
+     * @memberof module:model/expense/examineFlow~expense/examineFlow/reducers
+     */
+    reduceSalaryPlanConfig(state, action) {
+      const salaryPlanConfig = action.payload;
+      return { ...state, salaryPlanConfig };
+    },
+
+     /**
+     * 获取审批流配置数据 - 薪资方案
+     * @returns {object} 更新 salaryDistribute
+     * @memberof module:model/expense/examineFlow~expense/examineFlow/reducers
+     */
+    reduceSalaryDistribute(state, action) {
+      const salaryDistribute = action.payload;
+      return { ...state, salaryDistribute };
+    },
+
+    /**
+     * 获取审批流数据列表(使用命名空间隔离数据，防止相同组件的数据影响)
+     * @returns {object} 更新 examineFlowDetail
+     * @memberof module:model/expense/examineFlow~expense/examineFlow/reducers
+     */
+    reduceexamineFlowDetail(state, action) {
+      const { examineFlowDetail } = state;
+      const { namespace } = action.payload;
+      const data = ApplicationFlowTemplateDetail.mapper(action.payload.result, ApplicationFlowTemplateDetail);
+      examineFlowDetail[namespace] = data;
+      return { ...state, examineFlowDetail };
+    },
+  },
+};
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-model_account_exception.html">model/account/exception</a></li><li><a href="module-model_account_manage.html">model/account/manage</a></li><li><a href="module-model_accountInfo.html">model/accountInfo</a></li><li><a href="module-model_admin_manage.html">model/admin/manage</a></li><li><a href="module-model_analysis.html">model/analysis</a></li><li><a href="module-model_application_common.html">model/application/common</a></li><li><a href="module-model_application_core.html">model/application/core</a></li><li><a href="module-model_application_files.html">model/application/files</a></li><li><a href="module-model_application_setting.html">model/application/setting</a></li><li><a href="module-model_application_subscription.html">model/application/subscription</a></li><li><a href="module-model_applicationManage.html">model/applicationManage</a></li><li><a href="module-model_district_manage.html">model/district/manage</a></li><li><a href="module-model_employee_contract.html">model/employee/contract</a></li><li><a href="module-model_employee_manage.html">model/employee/manage</a></li><li><a href="module-model_employee_transport.html">model/employee/transport</a></li><li><a href="module-model_expense_approval.html">model/expense/approval</a></li><li><a href="module-model_expense_borrowingRepaments.html">model/expense/borrowingRepaments</a></li><li><a href="module-model_expense_costOrder.html">model/expense/costOrder</a></li><li><a href="module-model_expense_examineFlow.html">model/expense/examineFlow</a></li><li><a href="module-model_expense_examineOrder.html">model/expense/examineOrder</a></li><li><a href="module-model_expense_houseContract.html">model/expense/houseContract</a></li><li><a href="module-model_expense_subject.html">model/expense/subject</a></li><li><a href="module-model_expense_type.html">model/expense/type</a></li><li><a href="module-model_finance_plan.html">model/finance/plan</a></li><li><a href="module-model_finance_task.html">model/finance/task</a></li><li><a href="module-model_financeFundsConfig.html">model/financeFundsConfig</a></li><li><a href="module-model_financeRulesGenerator.html">model/financeRulesGenerator</a></li><li><a href="module-model_financeSummaryManage.html">model/financeSummaryManage</a></li><li><a href="module-model_inquireModel.html">model/inquireModel</a></li><li><a href="module-model_materials.html">model/materials</a></li><li><a href="module-model_operationManage.html">model/operationManage</a></li><li><a href="module-model_supplier_manage.html">model/supplier/manage</a></li><li><a href="module-model_supply_deductions.html">model/supply/deductions</a></li><li><a href="module-model_supply_details.html">model/supply/details</a></li><li><a href="module-model_supply_distribution.html">model/supply/distribution</a></li><li><a href="module-model_supply_procurement.html">model/supply/procurement</a></li><li><a href="module-model_supply_set.html">model/supply/set</a></li><li><a href="module-model_system.html">model/system</a></li><li><a href="module-model_system_city.html">model/system/city</a></li><li><a href="module-model_system_download.html">model/system/download</a></li><li><a href="module-model_system_manage.html">model/system/manage</a></li><li><a href="module-model_system_recommendedCompany.html">model/system/recommendedCompany</a></li><li><a href="module-model_upload.html">model/upload</a></li><li><a href="module-services_account.html">services/account</a></li><li><a href="module-services_analysis.html">services/analysis</a></li><li><a href="module-services_employee.html">services/employee</a></li><li><a href="module-services_expense.html">services/expense</a></li><li><a href="module-services_expense_borrowingRepayment.html">services/expense/borrowingRepayment</a></li><li><a href="module-services_expense_costOrder.html">services/expense/costOrder</a></li><li><a href="module-services_expense_examineOrder.html">services/expense/examineOrder</a></li><li><a href="module-services_expense_houseContract.html">services/expense/houseContract</a></li><li><a href="module-services_finance.html">services/finance</a></li><li><a href="module-services_finance_funds.html">services/finance/funds</a></li><li><a href="module-services_inquire.html">services/inquire</a></li><li><a href="module-services_login.html">services/login</a></li><li><a href="module-services_salary.html">services/salary</a></li><li><a href="module-services_setting.html">services/setting</a></li><li><a href="module-services_stores.html">services/stores</a></li><li><a href="module-services_system.html">services/system</a></li><li><a href="module-services_system_city.html">services/system/city</a></li><li><a href="module-services_system_recommendedCompany.html">services/system/recommendedCompany</a></li><li><a href="module-services_system_supplier.html">services/system/supplier</a></li><li><a href="module-services_upload.html">services/upload</a></li></ul><h3>Namespaces</h3><ul><li><a href="module-model_account_exception-account_exception_effects.html">account/exception/effects</a></li><li><a href="module-model_account_exception-account_exception_reducers.html">account/exception/reducers</a></li><li><a href="module-model_account_exception-account_exception_subscriptions.html">account/exception/subscriptions</a></li><li><a href="module-model_account_manage-account_manage_effects.html">account/manage/effects</a></li><li><a href="module-model_account_manage-account_manage_reducers.html">account/manage/reducers</a></li><li><a href="module-model_accountInfo-account_accountInfo_effects.html">account/accountInfo/effects</a></li><li><a href="module-model_accountInfo-account_accountInfo_reducers.html">account/accountInfo/reducers</a></li><li><a href="module-model_accountInfo-account_accountInfo_subscriptions.html">account/accountInfo/subscriptions</a></li><li><a href="module-model_admin_manage-admin_manage_effects.html">admin/manage/effects</a></li><li><a href="module-model_admin_manage-admin_manage_reducers.html">admin/manage/reducers</a></li><li><a href="module-model_admin_manage-admin_manage_subscriptions.html">admin/manage/subscriptions</a></li><li><a href="module-model_analysis-analysis_effects.html">analysis/effects</a></li><li><a href="module-model_analysis-analysis_reducers.html">analysis/reducers</a></li><li><a href="module-model_analysis-analysis_subscriptions.html">analysis/subscriptions</a></li><li><a href="module-model_application_common-application_common_effects.html">application/common/effects</a></li><li><a href="module-model_application_common-application_common_reducers.html">application/common/reducers</a></li><li><a href="module-model_application_core-application_core_effects.html">application/core/effects</a></li><li><a href="module-model_application_files-application_files_effects.html">application/files/effects</a></li><li><a href="module-model_application_files-application_files_reducers.html">application/files/reducers</a></li><li><a href="module-model_application_setting-application_setting_effects.html">application/setting/effects</a></li><li><a href="module-model_application_setting-application_setting_reducers.html">application/setting/reducers</a></li><li><a href="module-model_application_subscription-application_subscription_subscriptions.html">application/subscription/subscriptions</a></li><li><a href="module-model_applicationManage-applicationManage_effects.html">applicationManage/effects</a></li><li><a href="module-model_applicationManage-applicationManage_reducers.html">applicationManage/reducers</a></li><li><a href="module-model_district_manage-district_manage_effects.html">district/manage/effects</a></li><li><a href="module-model_district_manage-district_manage_reducers.html">district/manage/reducers</a></li><li><a href="module-model_employee_contract-employee_contract_effects.html">employee/contract/effects</a></li><li><a href="module-model_employee_contract-employee_contract_reducers.html">employee/contract/reducers</a></li><li><a href="module-model_employee_manage-employee_manage_effects.html">employee/manage/effects</a></li><li><a href="module-model_employee_manage-employee_manage_reducers.html">employee/manage/reducers</a></li><li><a href="module-model_employee_transport-employee_transport_effects.html">employee/transport/effects</a></li><li><a href="module-model_employee_transport-employee_transport_reducers.html">employee/transport/reducers</a></li><li><a href="module-model_expense_approval-expense_approval_effects.html">expense/approval/effects</a></li><li><a href="module-model_expense_approval-expense_approval_reducers.html">expense/approval/reducers</a></li><li><a href="module-model_expense_approval-expense_approval_subscriptions.html">expense/approval/subscriptions</a></li><li><a href="module-model_expense_borrowingRepaments-expense_borrowingRepayment_effects.html">expense/borrowingRepayment/effects</a></li><li><a href="module-model_expense_borrowingRepaments-expense_costOrder_reducers.html">expense/costOrder/reducers</a></li><li><a href="module-model_expense_costOrder-expense_costOrder_effects.html">expense/costOrder/effects</a></li><li><a href="module-model_expense_costOrder-expense_costOrder_reducers.html">expense/costOrder/reducers</a></li><li><a href="module-model_expense_examineFlow-expense_examineFlow_effects.html">expense/examineFlow/effects</a></li><li><a href="module-model_expense_examineFlow-expense_examineFlow_reducers.html">expense/examineFlow/reducers</a></li><li><a href="module-model_expense_examineOrder-expense_examineOrder_effects.html">expense/examineOrder/effects</a></li><li><a href="module-model_expense_examineOrder-expense_examineOrder_reducers.html">expense/examineOrder/reducers</a></li><li><a href="module-model_expense_houseContract-expense_houseContract_effects.html">expense/houseContract/effects</a></li><li><a href="module-model_expense_houseContract-expense_houseContract_reducers.html">expense/houseContract/reducers</a></li><li><a href="module-model_expense_houseContract-expense_houseContract_subscriptions.html">expense/houseContract/subscriptions</a></li><li><a href="module-model_expense_subject-expense_subject_effects.html">expense/subject/effects</a></li><li><a href="module-model_expense_subject-expense_subject_reducers.html">expense/subject/reducers</a></li><li><a href="module-model_expense_subject-expense_subject_subscriptions.html">expense/subject/subscriptions</a></li><li><a href="module-model_expense_type-expense_type_effects.html">expense/type/effects</a></li><li><a href="module-model_expense_type-expense_type_reducers.html">expense/type/reducers</a></li><li><a href="module-model_finance_plan-finance_plan_effects.html">finance/plan/effects</a></li><li><a href="module-model_finance_plan-finance_plan_reducers.html">finance/plan/reducers</a></li><li><a href="module-model_finance_task-finance_task_effects.html">finance/task/effects</a></li><li><a href="module-model_finance_task-finance_task_reducers.html">finance/task/reducers</a></li><li><a href="module-model_financeFundsConfig-financeFundsConfig_effects.html">financeFundsConfig/effects</a></li><li><a href="module-model_financeFundsConfig-financeFundsConfig_reducers.html">financeFundsConfig/reducers</a></li><li><a href="module-model_financeRulesGenerator-financeRulesGenerator_effects.html">financeRulesGenerator/effects</a></li><li><a href="module-model_financeRulesGenerator-financeRulesGenerator_reducers.html">financeRulesGenerator/reducers</a></li><li><a href="module-model_financeSummaryManage-financeSummaryManage_effects.html">financeSummaryManage/effects</a></li><li><a href="module-model_financeSummaryManage-financeSummaryManage_reducers.html">financeSummaryManage/reducers</a></li><li><a href="module-model_financeSummaryManage-financeSummaryManage_subscriptions.html">financeSummaryManage/subscriptions</a></li><li><a href="module-model_inquireModel-inquireModel_effects.html">inquireModel/effects</a></li><li><a href="module-model_inquireModel-inquireModel_reducers.html">inquireModel/reducers</a></li><li><a href="module-model_materials-financeConfigIndex_effects.html">financeConfigIndex/effects</a></li><li><a href="module-model_materials-financeConfigIndex_reducers.html">financeConfigIndex/reducers</a></li><li><a href="module-model_materials-financeConfigTags_effects.html">financeConfigTags/effects</a></li><li><a href="module-model_materials-financeConfigTags_reducers.html">financeConfigTags/reducers</a></li><li><a href="module-model_materials-financeFundsManage_effects.html">financeFundsManage/effects</a></li><li><a href="module-model_materials-financeFundsManage_reducers.html">financeFundsManage/reducers</a></li><li><a href="module-model_materials-materials_effects.html">materials/effects</a></li><li><a href="module-model_materials-materials_reducers.html">materials/reducers</a></li><li><a href="module-model_materials-materials_subscriptions.html">materials/subscriptions</a></li><li><a href="module-model_operationManage-operationManage_effects.html">operationManage/effects</a></li><li><a href="module-model_operationManage-operationManage_reducers.html">operationManage/reducers</a></li><li><a href="module-model_supplier_manage-supplier_manage_effects.html">supplier/manage/effects</a></li><li><a href="module-model_supplier_manage-supplier_manage_reducers.html">supplier/manage/reducers</a></li><li><a href="module-model_supply_deductions-supply_deductions_effects.html">supply/deductions/effects</a></li><li><a href="module-model_supply_deductions-supply_deductions_reducers.html">supply/deductions/reducers</a></li><li><a href="module-model_supply_deductions-supply_deductSummarize_effects.html">supply/deductSummarize/effects</a></li><li><a href="module-model_supply_deductions-supply_deductSummarize_reducers.html">supply/deductSummarize/reducers</a></li><li><a href="module-model_supply_details-supply_details_effects.html">supply/details/effects</a></li><li><a href="module-model_supply_details-supply_details_reducers.html">supply/details/reducers</a></li><li><a href="module-model_supply_distribution-supply_distribution_effects.html">supply/distribution/effects</a></li><li><a href="module-model_supply_distribution-supply_distribution_reducers.html">supply/distribution/reducers</a></li><li><a href="module-model_supply_procurement-supply_procurement_effects.html">supply/procurement/effects</a></li><li><a href="module-model_supply_procurement-supply_procurement_reducers.html">supply/procurement/reducers</a></li><li><a href="module-model_supply_set-supply_set_effects.html">supply/set/effects</a></li><li><a href="module-model_supply_set-supply_set_reducers.html">supply/set/reducers</a></li><li><a href="module-model_system_city-system_city_effects.html">system/city/effects</a></li><li><a href="module-model_system_city-system_city_reducers.html">system/city/reducers</a></li><li><a href="module-model_system_download-system_download_effects.html">system/download/effects</a></li><li><a href="module-model_system_download-system_download_reducers.html">system/download/reducers</a></li><li><a href="module-model_system_manage-system_manage_effects.html">system/manage/effects</a></li><li><a href="module-model_system_manage-system_manage_reducers.html">system/manage/reducers</a></li><li><a href="module-model_system_recommendedCompany-system_recommendedCompany_effects.html">system/recommendedCompany/effects</a></li><li><a href="module-model_system_recommendedCompany-system_recommendedCompany_reducers.html">system/recommendedCompany/reducers</a></li><li><a href="module-model_system-system_effects.html">system/effects</a></li><li><a href="module-model_system-system_reducers.html">system/reducers</a></li><li><a href="module-model_system-system_subscriptions.html">system/subscriptions</a></li><li><a href="module-model_upload-upload_effects.html">upload/effects</a></li><li><a href="module-model_upload-upload_reducers.html">upload/reducers</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sun Apr 28 2019 11:25:15 GMT+0800 (CST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

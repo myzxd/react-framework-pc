@@ -1,0 +1,32 @@
+/* 二维码样式 */
+.app-layout-widgets-qrcode-box {
+  text-align: center !important;
+}
+
+/* 二维码样式 */
+.app-layout-widgets-qrcode {
+  width: 250px !important;
+  height: 250px !important;
+}
+
+/* 任务列表的组建 */
+.app-layout-widgets-task {
+  width: 600px !important;
+  margin: 10px 0px !important;
+}
+
+.app-layout-qrcode-wrap {
+  text-align: center;
+}
+
+.app-layout-qrcode-img {
+  width: 250px;
+  height: 250px;
+}
+.app-layout-qrcode-download {
+  word-break:break-word;
+}
+
+.app-comp-layout-tabWrap{
+  width: 320px;
+}

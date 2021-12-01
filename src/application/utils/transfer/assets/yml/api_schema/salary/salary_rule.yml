@@ -1,0 +1,161 @@
+- module: 'salary_rule'
+  apis:
+  - api_ns: 'salary_rule'
+    cmd_list:
+      - summary: 服务费计算规则创建
+        description: 服务费计算规则创建
+        cmd: create
+        params:
+          - name: rule_collection_id
+            type: ObjectId
+            required: true
+            note: 归属的服务费规则集ID
+            enum_values: ''
+          - name: collection_cate
+            type: int
+            required: true
+            note: '规则分类(1:单量,2:出勤,3:质量,4:管理)'
+            enum_values: ''
+          - name: match_filters
+            type: '[dict]'
+            required: true
+            note: 数据源筛选器(条件)
+          - name: compute_logic
+            type: '[dict]'
+            required: true
+            note: 数据处理逻辑
+        result: {}
+        param_example:
+          rule_collection_id: '5a655eaace6d2a430f748f82'
+          collection_cate: 1
+          match_filters: {
+              order_type: 1,
+              staff_type: 10,
+              work_state: 100,
+              station_level: 2,
+              staff_tags: ['5a655eaace6d2a430f748f82', '5a655eaace6d2a430f748f82']
+          }
+          compute_logic: {
+              max_value: 300,
+              symbol: '<',
+              min_value: 50,
+              value: 500,
+              inf_flag: True,
+              level: 1
+          }
+        result_example:
+          ok: true
+
+      - summary: 服务费计算规则列表
+        description: 服务费计算规则列表
+        cmd: find
+        params:
+          - name: rule_collection_id
+            type: ObjectId
+            required: true
+            note: 服务费规则集ID
+          - name: collection_cate
+            type: int
+            required: true
+            note: 规则分类(1:单量,2:出勤,3:质量,4:管理)
+            enum_values: ''
+        result:
+          type: 'api_result_set_with_meta'
+          schema: 'salary_rule_list_item'
+        param_example:
+          rule_collection_id: '5a655eaace6d2a430f748f82'
+        result_example:
+          match_filters: []
+          compute_logic: []
+
+      - summary: 服务费计算规则详情（待定暂时不用）
+        description: 服务费计算规则详情
+        cmd: get
+        params_schema: 'detail_data'
+        result:
+          type: 'api_result'
+          schema: 'salary_rule_detail'
+        param_example:
+          collection_cate: 2
+          id: '5a655eaace6d2a430f748f82'
+        result_example:
+          match_filters: []
+          compute_logic: []
+
+      - summary: 服务费计算规则删除
+        description: 服务费计算规则删除
+        cmd: delete
+        params_schema: 'delete_data'
+        result: {}
+        param_example:
+          id: '5a655eaace6d2a430f748f82'
+        result_example:
+          ok: true
+
+      - summary: 更新服务费计算规则
+        description: 服务费计算规则更新保存
+        cmd: update
+        params:
+          - name: _id
+            type: ObjectId
+            required: true
+            note: 服务费规则ID
+            enum_values: ''
+          - name: compute_logic
+            type: '[dict]'
+            required: true
+            note: 数据处理逻辑
+            enum_values: ''
+          - name: collection_cate
+            type: int
+            required: true
+            note: '规则分类(1:单量,2:出勤,3:质量,4:管理)'
+            enum_values: ''
+        result: {}
+        param_example:
+          rule_collection_id: '5a655eaace6d2a430f748f82'
+          collection_cate: 1
+          state: 100
+          match_filters: {
+              order_type: 1,
+              staff_type: 10,
+              work_state: 100,
+              station_level: 2,
+              staff_tags: ['5a655eaace6d2a430f748f82', '5a655eaace6d2a430f748f82']
+          }
+          compute_logic: {
+              max_value: 300,
+              symbol: '<',
+              min_value: 50,
+              value: 500,
+              inf_flag: True,
+              level: 1
+          }
+        result_example:
+          ok: true
+
+      - summary: 修改规则优先级
+        description: 上移下移修改规则的适用顺序
+        cmd: change_index_num
+        params:
+          - name: collection_id
+            type: ObjectId
+            required: true
+            note: 规则集ID
+            enum_values: ''
+          - name: rule_id
+            type: ObjectId
+            required: true
+            note: 规则ID
+            enum_values: ''
+          - name: index_num
+            type: int
+            required: true
+            note: 优先级索引编号
+            enum_values: ''
+        result: {}
+        param_example:
+          up_id: '5a655eaace6d2a430f748f82'
+          down_id: '5a655eaace6d2a430f748f82'
+        result_example:
+          ok: true

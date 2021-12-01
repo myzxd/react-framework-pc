@@ -1,0 +1,25 @@
+/* 权限创建返回按钮 */
+.boss_announcement_create_return {
+  text-align: right !important;
+}
+
+/* 权限创建提交按钮 */
+.boss_announcement_create_submit {
+  text-align: left !important;
+}
+
+/* 权限详情 */
+.boss_announcement_detail {
+  text-align: center !important;
+}
+
+/* 权限列表编辑操作 */
+.boss_announcement_list_operation_update {
+  color: orange !important;
+}
+
+/* 权限列表详情操作 */
+.boss_announcement_list_operation_detail {
+  color: orange !important;
+  margin-left: 5px !important;
+}

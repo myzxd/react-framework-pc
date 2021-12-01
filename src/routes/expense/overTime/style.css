@@ -1,0 +1,45 @@
+/* 新建加班组件样式 */
+.app-comp-expense-overTime-create-wrap {
+  display: inline-block;
+}
+
+/* 新建加班按钮样式 */
+.app-comp-expense-overTime-create-button {
+  margin-left: 10px;
+}
+
+/* 加班列表页行内元素样式 */
+.app-comp-expense-overTime-table-line {
+  word-wrap: break-word;
+  word-break: break-all;
+}
+
+/* 加班列表页当前节点高亮样式 */
+.app-comp-expense-overTime-current-node-colored {
+  color: #F5A623;
+}
+
+/* 加班列表页当前节点行内样式 */
+.app-comp-expense-overTime-current-node-line {
+  width: 100px;
+}
+
+/* 加班单操作布局 */
+.app-comp-overTime-create-operate-wrap {
+  text-align: center;
+}
+
+/* 加班单新建/编辑操作样式 */
+.app-comp-overTime-create-operate-next {
+  margin-left: 20px;
+}
+
+/* 导出EXCEL按钮样式 */
+.app-comp-expense-overtime-export {
+  margin-left: 20px;
+}
+
+/* 查询组件RangePicker样式 */
+.app-comp-expense-overtime-search-time {
+  width: 100% !important;
+}

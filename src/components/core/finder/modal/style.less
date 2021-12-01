@@ -1,0 +1,59 @@
+// 预览文件是图片时：img外层的盒子样式
+.app-comp-core-preview-box{
+  background: #000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: .9;
+  img{
+    max-width: 100%;
+  }
+}
+
+// modal header盒子的样式
+.app-comp-core-modal-title-box{
+  display: flex;
+  justify-content: space-between;
+  width: 96%;
+  // header盒子下 title盒子的样式
+  .app-comp-core-model-title{
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 500px;
+  }
+  //  header盒子下 操作按钮盒子的样式
+  .app-comp-core-model-switch{
+    display: flex;
+  }
+}
+// 操作按钮 左右切换按钮 样式
+.app-comp-core-model-widgets-navigate-prev{
+  margin-right: 4px;
+}
+.app-comp-core-model-widgets-navigate-next,
+// 操作按钮 是否全屏按钮 样式
+.app-comp-core-model-widgets-fullscreen,
+// 操作按钮 新窗口打开按钮 && 重新加载数据按钮 样式
+.app-comp-core-model-widgets-newopen,.app-comp-core-modal-widgets-reload{
+  margin-right: 10px;
+}
+
+// 显示antd-result组件 样式
+.app-comp-core-model-preview-result{
+  width: 100%;
+  min-height: 650px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+
+//链接不存在 展示空数据的样式
+.app-comp-core-model-preview-empty{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 650px;
+}

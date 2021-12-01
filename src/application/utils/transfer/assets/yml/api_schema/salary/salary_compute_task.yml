@@ -1,0 +1,179 @@
+- module: 'salary_compute_task'
+  apis:
+  - api_ns: 'salary_compute_task'
+    cmd_list:
+    - summary: 服务费试算任务创建
+      description: '服务费试算任务创建'
+      cmd: create
+      params:
+        - name: plan_version_id
+          type: object_id
+          required: true
+          note: '服务费方案版本id'
+          enum_values: ’‘
+        - name: from_date
+          type: int
+          required: true
+          note: '试算服务费开始时间（yyyymmdd）'
+          enum_values: ''
+        - name: to_date
+          type: int
+          required: true
+          note: '试算服务费结束时间（yyyymmdd）'
+          enum_values: ''
+      result: {}
+      param_example:
+        plan_version_id: '5a655eaace6d2a430f748f82'
+        start_date: '2018-10-09 18:59:20'
+        end_date: '2018-10-09 18:59:20'
+      result_example:
+        _id: '5a655eaace6d2a430f748f82'
+        supplier_id: '5a655eaace6d2a430f748f82'
+        platform_code: '123321'
+        city_code: '123321'
+        biz_district_id: '5a655eaace6d2a430f748f82'
+        plan_id: '5a655eaace6d2a430f748f82'
+        plan_version_id: '5a655eaace6d2a430f748f82'
+        plan_revision_id: '5a655eaace6d2a430f748f82'
+        compute_context: {}
+        state: 1
+        created_at: '2018-10-09 18:59:20'
+        updated_at: '2018-10-09 18:59:20'
+
+
+    - summary: 服务费试算任务列表
+      description: '服务费试算任务列表'
+      cmd: find
+      params:
+        - name: plan_version_id
+          type: object_id
+          required: true
+          note: '服务费方案版本id'
+          enum_values: ''       
+      result:
+        type: 'api_result_set_with_meta'
+        schema: 'salary_compute_task_list_item'
+      param_example:
+        plan_version_id: '5a655eaace6d2a430f748f82'
+      result_example:
+        _id: '5a655eaace6d2a430f748f82'
+        supplier_id: '5a655eaace6d2a430f748f82'
+        platform_code: '12345653323'
+        city_code: '123321'
+        city_name: '天津'
+        biz_district_name: ’虹桥‘
+        biz_district_id: '5a655eaace6d2a430f748f82'
+        plan_id: '5a655eaace6d2a430f748f82'
+        plan_version_id: '5a655eaace6d2a430f748f82'
+        plan_revision_id: '5a655eaace6d2a430f748f82'
+        compute_context: {}
+        state: 100
+        created_at: '2018-10-09 18:59:20'
+        updated_at: '2018-10-09 18:59:20'
+        compute_dataset_info: {}
+
+    - summary: 服务费试算任务详情
+      description: '服务费试算任务详情'
+      cmd: get
+      params:
+        - name: id
+          type: object_id
+          required: true
+          note: '服务费试算任务id'
+          enum_values: ''
+      result:
+        type: 'api_result'
+        schema: 'salary_compute_task_detail'
+      param_example:
+        id: '5a655eaace6d2a430f748f82'
+      result_example:
+        _id: '5a655eaace6d2a430f748f82'
+        supplier_id: '5a655eaace6d2a430f748f82'
+        platform_code: '12345653323'
+        city_code: '123321'
+        city_name: '我的撒'
+        biz_district_id: '5a655eaace6d2a430f748f82'
+        biz_district_name: '虹桥'
+        plan_id: '5a655eaace6d2a430f748f82'
+        plan_version_id: '5a655eaace6d2a430f748f82'
+        plan_revision_id: '5a655eaace6d2a430f748f82'
+        compute_context: {}
+        vdoing: ‘骑士维度’
+        state: 100
+        created_at: '2018-10-09 18:59:20'
+        updated_at: '2018-10-09 18:59:20'
+        compute_dataset_info: {}
+
+
+    - summary: 人员服务费计算结果集列表
+      description: '人员服务费计算结果集列表'
+      cmd: find
+      params:
+        - name: task_id
+          type: object_id
+          required: true
+          note: '服务费试算任务id'
+          enum_values: ''
+        - name: type
+          type: int
+          required: true
+          note: '类型'
+          enum_values: '1（人员明细）2（商圈）3（城市）'      
+      result:
+        type: 'api_result_set_with_meta'
+        schema: 'salary_compute_dataset_list_item'
+      param_example:
+        task_id: '5a655eaace6d2a430f748f82'
+        type: 2
+      result_example:
+          ok: true
+          _id: '5a655eaace6d2a430f748f82'
+          plan_id: '5a655eaace6d2a430f748f82'
+          plan_version_id: '5a655eaace6d2a430f748f82'
+          task_id: '5a655eaace6d2a430f748f82'
+          session_id: '5a655eaace6d2a430f748f82'
+          type: 2
+          staff_id: '5a655eaace6d2a430f748f82'
+          supplier_id: '5a655eaace6d2a430f748f82'
+          platform_code: ’123321‘
+          work_type: 3001
+          city_code: '123321'
+          city_name: '天津'
+          biz_district_id: '5a655eaace6d2a430f748f82'
+          biz_district_name: '虹桥'
+          plan_revision_id: '5a655eaace6d2a430f748f82'
+          data: {
+            finish_order_quantity: 200,
+            trials_total_money: 20000,
+            total_amount: 20000,
+            total_subsidy: 20000,
+            total_manage: 20000,
+                }
+          start_date: '2018-10-09 18:59:20'
+          end_date: '2018-10-09 18:59:20'
+          created_at: '2018-10-09 18:59:20'
+          knight_info: {
+            knight_name: '黄晓明',
+            knight_id: '5a655eaace6d2a430f748f82',
+            phone: '15011331749'
+                }
+
+    - summary: 导出服务费试算数据
+      description: '导出服务费试算数据'
+      cmd: export_compute_result
+      params:
+        - name: plan_version_id
+          type: object_id
+          required: true
+          note: '服务费方案版本id'
+          enum_values: ''
+        - name: task_id
+          type: object_id
+          required: true
+          note: '试算任务ID'
+          enum_values: ''
+      result: {}
+      param_example:
+        plan_version_id: '5a655eaace6d2a430f748f82'
+      result_example:
+        ok: true

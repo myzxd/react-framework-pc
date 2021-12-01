@@ -1,0 +1,442 @@
+
+/* 之家的样式 */
+/* 颜色样式 */
+:global #root a:hover button {
+	color: #FF7700;
+}
+
+:global #root a:hover button.ant-btn-primary {
+	color: #FFF;
+}
+:global .ant-btn-primary-disabled, :global .ant-btn-primary.disabled, :global .ant-btn-primary[disabled],
+:global .ant-btn-primary-disabled:hover, :global .ant-btn-primary.disabled:hover,
+:global .ant-btn-primary[disabled]:hover, :global .ant-btn-primary-disabled:focus,
+:global .ant-btn-primary.disabled:focus, :global .ant-btn-primary[disabled]:focus,
+:global .ant-btn-primary-disabled:active, :global .ant-btn-primary.disabled:active,
+:global .ant-btn-primary[disabled]:active, :global .ant-btn-primary-disabled.active,
+:global .ant-btn-primary.disabled.active, :global .ant-btn-primary[disabled].active {
+	color: rgba(0, 0, 0, 0.25);
+	background-color: #f5f5f5 !important;
+	border-color: #d9d9d9 !important;
+	text-shadow: none;
+	-webkit-box-shadow: none;
+	box-shadow: none;
+}
+
+:global #root .app-global-pointer {
+	cursor: pointer;
+}
+
+:global #root .app-global-system-text-color {
+	color: #FF7700;
+}
+
+/*文本修饰属性*/
+:global #root .app-global-text-center {
+	text-align: center;
+}
+
+:global #root .app-global-text-right {
+	text-align: right;
+}
+
+:global #root .app-global-text-left {
+	text-align: left;
+}
+
+/*布局样式*/
+:global #root .app-global-fltr {
+	float: right;
+}
+
+/*全局 font-weight 属性*/
+:global #root .app-global-ftw3 {
+	font-weight: 300;
+}
+:global #root .app-global-ftw6 {
+	font-weight: 600;
+}
+
+:global #root .ant-collapse-extra {
+  float: right !important;
+}
+
+
+:global .app-global-compoments-cursor {
+    margin-right: 10px;
+    color: #3399FF;
+	cursor: pointer;
+}
+
+/* 文本颜色 */
+:global .app-global-compoments-color1 {
+    color: rgb(42,128,34);
+}
+:global .app-global-compoments-color2 {
+    color: rgb(244,133,46);
+}
+:global .app-global-compoments-color3 {
+    color: rgb(255,38,45);
+}
+:global .app-global-compoments-color4 {
+    color: rgb(251,141,25);
+}
+
+/* 宽度 */
+:global .app-global-componenth-width70 {
+    width: 70px;
+}
+
+:global .app-global-componenth-width300 {
+    width: 300px;
+}
+
+/*全局相关的主题及色系*/
+:global .ant-btn-primary {
+	/* background: #FF7700 !important; */
+  /* border-color: #FF7700 !important; */
+}
+:global .ant-btn-dashed:hover,
+:global .ant-btn-dashed:focus {
+  color: #FF7700 !important;
+  background-color: #fff !important;
+  border-color: #FF7700 !important;
+}
+:global .ant-modal-footer .ant-btn:hover,
+:global .ant-modal-footer .ant-btn:focus,
+/* :global .ant-modal-footer .ant-btn:active {
+  color: #FF7700 !important;
+} */
+:global .ant-input:hover, :global .ant-btn:hover, :global .ant-btn:focus {
+	border-color: #FF7700 !important;
+}
+:global .ant-upload .ant-btn:hover, :global .ant-upload .ant-btn:active, :global .ant-upload .ant-btn:focus {
+	color: #FF7700;
+}
+
+:global .ant-btn-link:hover, :global .ant-btn-link:focus {
+  border-color: transparent !important;
+}
+
+/* antd 下拉框样式*/
+:global .ant-select-dropdown-menu-item:hover, :global .ant-select-dropdown-menu-item-active, :global .ant-select-dropdown-menu-item-selected {
+	background: rgba(255, 119, 0, 0.05) !important;
+}
+:global #root .ant-select-dropdown-menu-item-selected:hover:after {
+	color: #FF7700 !important;
+}
+:global #root .ant-select-dropdown-menu-item-selected:after {
+	color: #FF7700 !important;
+	background: #FF7700 !important;
+}
+:global #root .ant-select-dropdown .ant-select-dropdown--multiple .ant-select-dropdown-menu-item-selected:after, :global #root .ant-select-dropdown .ant-select-dropdown--multiple .ant-select-dropdown-menu-item-selected:hover:after {
+	color: #FF7700 !important;
+}
+:global #root .ant-select-selection:hover,
+:global #root .ant-select-selection:active,
+:global #root .ant-select-selection:focus {
+	border-color: #FF7700;
+}
+:global #root .ant-select-open .ant-select-selection {
+	border-color: #FF7700;
+	box-shadow: 0 0 0 2px rgba(255, 119, 0, 0.2);
+}
+
+/*antd 分页样式*/
+:global #root .ant-pagination-item-active {
+	background-color: #FF7700;
+	border-color: #FF7700;
+}
+:global #root .ant-pagination-item-active a {
+	color: #ffffff !important;
+}
+:global #root .ant-pagination-item:hover,
+:global #root .ant-pagination-item:hover a {
+	transition: all 0.3s ease;
+	border-color: #FF7700;
+	color: #FF7700;
+}
+:global #root .ant-pagination-prev:hover,
+:global #root .ant-pagination-next:hover,
+:global #root .ant-pagination-prev:hover a,
+:global #root .ant-pagination-next:hover a {
+	transition: all 0.3s ease;
+	border-color: #FF7700;
+	color: #FF7700;
+}
+
+/* antd导航菜单栏的样式 */
+:global .ant_menu_item_selected .ant-menu-item-selected {
+	color: #FF7700 !important;
+}
+:global .ant-menu-horizontal > .ant-menu-item-selected {
+    color: #FF7700 !important;
+    border-bottom-color: #FF7700 !important;
+}
+:global .ant-menu.ant-menu-horizontal > .ant-menu-item:hover {
+  color: #FF7700;
+  border-bottom-color: #FF7700;
+}
+
+/*antd 菜单栏重置*/
+:global .ant-menu-dark.ant-menu-inline .ant-menu-item-selected {
+	border-left: 5px solid #FF7700;
+}
+
+/* antd时间轴菜单栏的样式 */
+:global .ant-timeline-item-head-custom {
+	background-color: rgb(250,250,250) !important;
+}
+
+/* antd loading样式和最大高度 */
+:global .ant-spin-nested-loading > div > .ant-spin {
+	max-height: 400px !important;
+}
+:global .ant-spin-dot i {
+	background: #FF7700 !important;
+	color: #FF7700 !important;
+}
+
+/* antd tree 组件的选择背景 */
+:global .ant-tree.ant-tree-show-line li span.ant-tree-switcher {
+	background: #fafafa !important;
+	color: #FF7700 !important;
+}
+:global .ant-tree.ant-tree-show-line li:not(:last-child)::before {
+	border-left: 1px dotted rgba(255, 185, 124, 0.6) !important;;
+}
+
+:global .ant-tree li .ant-tree-node-content-wrapper.ant-tree-node-selected {
+	background-color: #00000000 !important;
+	color: #FF7700 !important;
+}
+
+/* 事务性编辑页表单form-item审批流样式 */
+:global .affairs-flow-basic .ant-form-item {
+  margin-bottom: 10px !important;
+}
+
+/* 事务性详情页表单form-item审批流样式 */
+:global .affairs-flow-detail-basic .ant-form-item, :global .organization-flow-preview .ant-form-item {
+  margin-bottom: 0px !important;
+}
+
+:global .affairs-flow-detail-basic .ant-form-item-label > label, :global .organization-flow-preview .ant-form-item-label > label {
+  color: #666666 !important;
+  font-weight: 400 !important;
+}
+
+:global .affairs-flow-detail-basic .ant-form-item-control-input-content, :global .organization-flow-preview .ant-form-item-control-input-content {
+  color: #666666 !important;
+  font-weight: 500 !important;
+}
+
+:global .affairs-flow-node .ant-form-item {
+  margin-bottom: 10px !important;
+}
+
+:global .affairs-flow-basic .ant-form-item-label > label {
+  color: #666666 !important;
+  font-weight: 400 !important;
+}
+
+:global .affairs-flow-basic .ant-form-item-control-input-content {
+  color: #666666 !important;
+  /* font-weight: 500 !important; */
+  word-break: break-all !important;
+}
+
+:global .affairs-flow-basic .ant-timeline-item-label {
+  width: calc(19%) !important;
+}
+
+:global .affairs-flow-basic .ant-timeline-item-tail, :global .affairs-flow-basic .ant-timeline-item-head {
+  left: 21% !important;
+}
+
+:global .affairs-flow-basic .ant-timeline-item-content {
+ left: calc(22%) !important;
+ width: calc(70%) !important;
+}
+
+:global .affairs-flow-basic .ant-timeline-item-label, :global .affairs-flow-basic .ant-timeline-item-content {
+  top: -2px !important;
+}
+
+:global .affairs-flow-form-detail .ant-form-item-control-input {
+  min-height: 18px !important;
+}
+
+:global .affairs-flow-node .ant-transfer .ant-transfer-operation .ant-form-item-label > label {
+  color: #282D36 !important;
+  font-weight: 500;
+}
+
+:global .affairs-detail-form-item .ant-form-item-control-input {
+  min-height: 0px !important;
+  height: 18px !important;
+}
+
+:global .affairs-detail-form-item .ant-form-item-label > label {
+  min-height: 0px !important;
+  height: 18px !important;
+}
+
+:global .affairs-flow-cc-transfer .ant-modal-body {
+  padding: 0px 24px 24px !important;
+}
+
+:global .affairs-flow-node-time-line-form .ant-form-item {
+  margin-bottom: 0px !important;
+}
+
+:global .affairs-flow-node-time-line-form .ant-form-item-label > label {
+  color: #666666 !important;
+  font-weight: 400 !important;
+}
+
+:global .affairs-flow-node-time-line-form .ant-form-item-control-input-content {
+  color: #666666 !important;
+  font-weight: 500 !important;
+}
+
+:global .affairs-flow-node-time-line .ant-timeline-item {
+  padding-bottom: 10px !important;
+}
+
+:global .affairs-flow-node-time-line .ant-timeline-item-content {
+  border-bottom: 1px solid #E9E9E9 !important;
+  padding-bottom: 10px !important;
+}
+
+:global .affairs-flow-node-report-type .ant-radio-group {
+  width: 100% !important;
+}
+
+/* 事务性审批流编辑页节点样式 */
+:global .affairs-flow-update-node .ant-form-item {
+  margin-bottom: 5px !important;
+}
+
+:global .affairs-flow-update-node .ant-form-item-label {
+  padding: 0px !important;
+}
+
+:global .affairs-flow-update-node .ant-form-item-label > label {
+  color: #666666 !important;
+  font-weight: 400 !important;
+}
+
+:global .affairs-flow-update-node .ant-form-item-control-input-content {
+  color: #666666 !important;
+  font-weight: 500 !important;
+}
+
+:global input:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 1000px white inset !important;
+}
+
+:global .wallet-bill-detail-basic-form .ant-form-item {
+  margin-bottom: 10px !important;
+}
+
+:global .wallet-bill-detail-basic-form .ant-form-item-label > label {
+  color: #666666 !important;
+  font-weight: 400 !important;
+}
+
+:global .wallet-bill-detail-basic-form .ant-form-item-control-input-content {
+  color: #666666 !important;
+  font-weight: 500 !important;
+}
+
+:global .wallet-bill-detail-basic-form-ver .ant-form-item-label {
+  padding: 0 !important;
+}
+
+:global .wallet-bill-detail-basic-form-ver .ant-form-item-control-input-content {
+  font-size: 20px !important;
+}
+
+/* 公共样式 - 列表操作  */
+:global .common-table-list-operate {
+  margin-left: 5px;
+}
+
+/* code - 审批流 - form - 节点设置 - 自定义表单 */
+:global .code-flow-form-customize-form .ant-form-item-control-input-content {
+  display: flex;
+  justify-content: space-between;
+}
+
+/* code - 审批流 - form - 节点设置 - 自定义表单 - formItem */
+:global .affairs-flow-node .code-flow-form-customize-form {
+  margin-bottom: 0 !important;
+}
+
+/* code - 审批单 - 基本信息 - 主题标签 */
+:global .code-approve-order-theme-tag .ant-form-item-control-input-content {
+  display: flex !important;
+}
+
+/* code - 审批链接textArea form */
+:global .code-flow-link-textArea {
+  min-height: 80px !important;
+}
+
+/* code - 审批链接textArea form */
+:global .code-flow-link-textArea .ant-form-item-control-input span {
+  max-height: max-content !important;
+}
+
+/* code - 审批链接textArea form */
+:global .code-flow-link-textArea .ant-form-item-control .ant-form-item-control-input .ant-form-item-control-input-content textarea.ant-input {
+  min-height: 80px !important;
+}
+
+/* 自定义表单必填样式 */
+:global .boss-form-item-required:before {
+  content: '*';
+  color: red;
+  font-size: 12px;
+  margin-right: 4px;
+  line-height: 1;
+  font-family: SimSun, sans-serif;
+  display: inline-block;
+}
+
+/* 自定义表单必填样式 */
+:global .boss-form-item-wrap-required:before {
+  content: '*';
+  color: red;
+  font-size: 12px;
+  margin-right: 4px;
+  line-height: 2.5;
+  font-family: SimSun, sans-serif;
+  display: inline-block;
+}
+
+/* 档案tab内容 */
+:global .contract-content-wrap .ant-tabs-content {
+  height: calc(100% - 57px) !important;
+}
+
+/* formitem 内容显示滚动条 */
+:global .form-item-content-scroll .ant-form-item-control {
+  overflow-x: auto !important;
+}
+
+/* 组织架构 - 审批流预览 */
+:global .organization-flow-preview .ant-timeline {
+  margin-top: 12px !important;
+}
+
+/* 组织架构 - 审批流预览 */
+:global .organization-flow-preview .ant-timeline-item-content {
+  margin: 0 0 0 15px !important;
+}
+/* 文字换行 */
+:global .noteWrap{
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}

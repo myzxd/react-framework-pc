@@ -1,0 +1,34 @@
+/* 借款管理表单借款类型样式 */
+.app-comp-expense-borrowing-form-borrow-type {
+  width: 100%;
+}
+
+/* 借款管理表单平台样式 */
+.app-comp-expense-borrowing-form-platform {
+  width: 100%;
+}
+
+/* 借款管理表单供应商样式 */
+.app-comp-expense-borrowing-form-supplier {
+  width: 100%;
+}
+
+/* 借款管理表单城市样式 */
+.app-comp-expense-borrowing-form-city {
+  width: 100%;
+}
+
+/* 借款管理表单商圈样式 */
+.app-comp-expense-borrowing-form-district {
+  width: 100%;
+}
+
+/* 借款管理表单隐藏样式 */
+.app-comp-expense-borrowing-form-hide {
+  display: none;
+}
+
+/* 借款管理表单还款周期样式 */
+.app-comp-expense-borrowing-form-repay-circle {
+  width: 100%;
+}

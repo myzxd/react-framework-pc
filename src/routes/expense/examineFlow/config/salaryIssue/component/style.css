@@ -1,0 +1,19 @@
+/* 服务费发放审批流配置自定义表单向下添加一个样式 */
+.boss-comp-expense-salary-issue-component-copy {
+  margin-right: 6px;
+}
+
+/* 服务费发放审批流配置自定义表单向下添加多个样式 */
+.boss-comp-expense-salary-issue-component-copy-all {
+  margin-left: 6px;
+}
+
+/* 服务费发放审批流配置公共宽度*/
+.boss_expense_salary_issue_component_common_width {
+  width: 100% !important;
+}
+
+/* 服务费发放审批流配置公共距离*/
+.boss_expense_salary_issue_component_common_distance {
+  width: 150px !important;
+}

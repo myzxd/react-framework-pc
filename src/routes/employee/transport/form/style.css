@@ -1,0 +1,15 @@
+/* 工号管理表单列表编辑操作 */
+.app-comp-employee-transport-form-operate-update {
+  margin-right: 20px !important;
+}
+
+/* 工号管理表单列表 */
+.app-comp-employee-transport-form-list {
+  background-color: #FAFAFA !important;
+}
+
+/* 工号管理表单列表按钮 */
+.app-comp-employee-transport-form-button {
+  display: block !important;
+  margin: 0 auto !important;
+}

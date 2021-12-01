@@ -1,0 +1,169 @@
+- name: salary_var_plan
+  description: 结算指标方案库
+  schema:
+  - name: _id
+    required: true
+    type: ObjectId
+    note: _id
+  - name: name
+    required: true
+    type: string
+    note: 指标库名称
+  - name: version
+    required: true
+    type: object_id
+    note: 指标库版本
+  - name: platform_code
+    required: true
+    type: string
+    note: 平台Code
+  - name: state
+    required: true
+    type: int
+    note: 状态 -101(删除) -100(停用) 100(启用) 1(草稿)
+  - name: enabled_at
+    required: false
+    type: datetime
+    default: None
+    note: 启用时间
+  - name: disabled_at
+    required: false
+    type: datetime
+    default: None
+    note: 停用时间
+  - name: deleted_at
+    required: false
+    type: datetime
+    default: None
+    note: 删除时间
+  - name: updated_at
+    required: true
+    type: datetime
+    note: 更新时间
+  - name: created_at
+    required: true
+    type: datetime
+    note: 创建时间
+  - name: creator_id
+    required: true
+    type: ObjectId
+    note: 创建人
+
+- name: salary_var
+  description: 结算指标定义
+  schema:
+  - name: _id
+    required: true
+    type: ObjectId
+    note: _id
+  - name: plan_id
+    required: true
+    type: ObjectId
+    note: 指标方案id
+  - name: version
+    required: true
+    type: object_id
+    note: 对应版本
+  - name: fork_version
+    required: false
+    type: object_id
+    note: 上一个版本（fork 来源）首个版本为空
+  - name: name
+    required: true
+    type: string
+    note: 名称
+  - name: unit
+    required: true
+    type: int
+    note: 单位(1:单,2:天,3:kg,4:km)
+
+  - name: definition
+    required: true
+    type: string
+    note: 指标定义
+
+  - name: platform_code
+    required: true
+    type: string
+    note: 平台Code
+
+  - name: state
+    required: true
+    type: int
+    note: 状态 -101(删除) -100(停用) 100(启用) 
+  - name: domain
+    required: true
+    type: int
+    note: 适用范围 2（商圈）3（城市） 4(平台)
+  - name: updated_at
+    required: true
+    type: datetime
+    note: 更新时间
+  - name: created_at
+    required: true
+    type: datetime
+    note: 创建时间
+  - name: creator_id
+    required: true
+    type: ObjectId
+    note: 创建人
+
+- name: salary_var_value
+  description: 结算指标参数值
+  schema:
+  - name: _id
+    required: true
+    type: ObjectId
+    note: _id
+  - name: plan_id
+    required: true
+    type: ObjectId
+    note: 指标方案id
+  - name: var_id
+    required: true
+    type: ObjectId
+    note: 指标id
+  - name: config_version_id
+    required: true
+    type: object_id
+    note: '参数值版本(对应 salary_plan_version 中 config_version_id)'
+  - name: definition
+    required: true
+    type: string
+    note: 指标定义
+  - name: platform_code
+    required: true
+    type: string
+    note: 平台Code
+  - name: supplier_id
+    required: false
+    type: ObjectId
+    note: 供应商ID
+  - name: city_code
+    required: false
+    type: string
+    note: 城市code
+
+  - name: biz_district_id
+    required: false
+    type: ObjectId
+    note: 商圈ID
+
+  - name: values
+    required: false
+    type: dict
+    note: "指标参数值字典: '{key:value}'. key 是参数 ID(string), value 是对应的取值."
+
+  - name: updated_at
+    required: true
+    type: datetime
+    note: 更新时间
+  - name: created_at
+    required: true
+    type: datetime
+    note: 创建时间
+  - name: creator_id
+    required: true
+    type: ObjectId
+    note: 创建人
+

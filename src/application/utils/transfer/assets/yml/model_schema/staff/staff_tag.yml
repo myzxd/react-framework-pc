@@ -1,0 +1,79 @@
+- name: staff_tag
+  description: 人员标签分组
+  schema:
+  - name: _id
+    required: true
+    type: ObjectId
+    note: _id
+  - name: name
+    required: true
+    type: string
+    note: 名称
+  - name: platform_code
+    required: true
+    type: string
+    note: 平台code
+  - name: supplier_id
+    required: true
+    type: ObjectId
+    note: 供应商ID
+  - name: city_code
+    required: true
+    type: string
+    note: 城市code
+  - name: biz_district_id
+    required: false
+    type: ObjectId
+    note: 商圈ID
+  - name: tag_type
+    required: true
+    type: int
+    note: 标签类型 1（城市级别）2（商圈级别）
+    default: 1
+  - name: staff_counter
+    required: false
+    type: int
+    note: 人员数量
+    default: 0
+  - name: operator_id
+    required: true
+    type: ObjectId
+    note: 创建人ID
+  - name: state
+    required: true
+    type: int
+    note: 100（启用） -100（停用）
+    default: 100
+  - name: updated_at
+    required: true
+    type: datetime
+    note: 更新时间
+  - name: created_at
+    required: true
+    type: datetime
+    note: 创建时间
+  extra_schema:
+    staff_list:
+      field_type: 'has'
+      # 关联信息 : ['pk_field', 'related model name']
+      meta: ['tags', 'salary_staff_tag_map']
+
+- name: staff_tag_map
+  description: 人员标签
+  schema:
+  - name: _id
+    required: true
+    type: ObjectId
+    note: Stuff ID
+  - name: tags
+    required: false
+    type: '[ObjectId]'
+    note: 人员归属标签明细
+  extra_schema:
+    staff_info:
+      field_type: 'ref'
+      meta: ['_id', 'Staff']
+    tag_list:
+      field_type: 'ref_field'
+      meta: ['_id', 'Staff']
+

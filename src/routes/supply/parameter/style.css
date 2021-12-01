@@ -1,0 +1,32 @@
+/* 物资台账页面列表采购总金额内容样式 */
+.app-comp-supply-parameter-list-procurement-text {
+  display: inline-block;
+  margin-right: 5px;
+}
+
+/* 物资台账页面列表采购总金额icon样式 */
+.app-comp-supply-parameter-list-procurement-icon {
+  color: #FF7700 !important;
+}
+
+/* 物资台账页面列表三方押金内容样式 */
+.app-comp-supply-parameter-list-parties-text {
+  display: inline-block;
+  margin-right: 5px;
+}
+
+/* 物资台账页面列表三方押金icon样式 */
+.app-comp-supply-parameter-list-parties-icon {
+  color: #FF7700 !important;
+}
+
+/* 物资台账页面列表人员押金内容样式 */
+.app-comp-supply-parameter-list-personnel-text {
+  display: inline-block;
+  margin-right: 5px;
+}
+
+/* 物资台账页面列表人员押金icon样式 */
+.app-comp-supply-parameter-list-personnel-icon {
+  color: #FF7700 !important;
+}

@@ -1,0 +1,351 @@
+- name: payroll_statement
+  description: 结算单-总账单（商圈级别）
+  schema:
+  - name: _id
+    type: ObjectId
+    note: _id
+    required: true
+  - name: supplier_id
+    type: ObjectId
+    note: 供应商id
+    required: true
+  - name: platform_code
+    type: string
+    note: 平台code
+    required: true
+  - name: city_code
+    type: string
+    note: 城市code
+    required: true
+
+  - name: payroll_cycle_type
+    type: int
+    note: '周期类型(按月:1, 按日:2)'
+    required: true
+
+  - name: payroll_plan_id
+    type: ObjectId
+    note: 服务费计划id
+    required: true
+
+  - name: payroll_cycle_no
+    type: int
+    note: 服务费计划周期编号
+    required: true
+
+  - name: position_id
+    type: int
+    note: 职位id
+    required: true
+  - name: order_count
+    type: int
+    note: 总单量
+    required: true
+    default: 0
+  - name: staff_count
+    type: int
+    note: 人员数量
+    required: true
+  - name: order_money
+    type: int
+    note: 单量提成金额
+    required: true
+    default: 0
+  - name: work_money
+    type: int
+    note: 出勤补贴金额
+    required: true
+    default: 0
+  - name: qa_money
+    type: int
+    note: 质量补贴金额
+    required: true
+    default: 0
+  - name: operation_money
+    type: int
+    note: 管理补贴金额
+    required: true
+    default: 0
+  - name: payable_money
+    type: int
+    note: 应发总额
+    required: true
+    default: 0
+  - name: net_pay_money
+    type: int
+    note: 实发总额
+    required: true
+  - name: state
+    note: 状态(1=待审核, 50=审核中,100=审核通过)
+    required: true
+    type: int
+    default: 1
+  - name: work_type
+    note: 工作性质
+    required: true
+    type: int
+    default: true
+  - name: adjument_hr_dec_money
+    type: int
+    note: 人事扣款总额
+    required: true
+    default: 0
+  - name: adjument_hr_inc_money
+    type: int
+    note: 人事补款总额
+    required: true
+    default: 0
+  - name: adjument_staff_dec_money
+    type: int
+    note: 人员扣款总额
+    required: true
+    default: 0
+  - name: adjument_staff_inc_money
+    type: int
+    note: 人员补款总额
+    required: true
+    default: 0
+  - name: adjument_staff_inc_state
+    note: 人员补款状态
+    required: false
+    type: bool
+  - name: adjument_staff_inc_state
+    note: 人员扣款状态
+    required: false
+    type: bool
+  - name: adjument_hr_inc_state
+    note: 人事补款状态
+    required: false
+    type: bool
+  - name: adjument_hr_inc_state
+    note: 人事扣款状态
+    required: false
+    type: bool
+    default: false
+
+  - name: single_average_amount
+    note: 单均成本
+    required: true
+    type: int
+
+
+  - name: oa_application_order_id
+    type: ObjectId
+    note: OA审批单ID
+    required: false
+
+  - name: salary_compute_data_set_id
+    type: ObjectId
+    note: 服务费计算结果集ID
+    required: false
+
+  - name: start_date
+    note: 起始日期
+    required: true
+    type: int
+  - name: end_date
+    note: 结束日期
+    required: true
+    type: int
+  - name: day
+    note: 日
+    required: false
+    type: int
+  - name: month
+    note: 月
+    required: true
+    type: int
+  - name: year
+    note: 年
+    required: true
+    type: int
+
+  - name: created_at
+    type: datetime
+    note: 创建时间
+    required: true
+    default: datetime.utcnow
+  - name: updated_at
+    type: datetime
+    note: 更新时间
+    required: true
+    default: datetime.utcnow
+
+
+- name: payroll
+  description: 结算单（明细）
+  schema:
+  - name: _id
+    type: ObjectId
+    note: _id
+    required: true
+  - name: supplier_id
+    note: 供应商id
+    type: ObjectId
+    required: true
+  - name: platform_code
+    type: string
+    note: 平台code
+    required: true
+  - name: city_code
+    type: string
+    note: 平台code_城市全拼
+    required: true
+  - name: biz_district_id
+    type: ObjectId
+    note: 商圈id|站点id|团队id
+    required: true
+
+  - name: position_id
+    type: int
+    note: 职位id
+    required: true
+
+  - name: staff_id
+    note: 人员id
+    required: true
+    type: ObjectId
+
+  - name: id_card_num
+    type: string
+    note: 身份证号
+    required: true
+
+  - name: payroll_statement_id
+    type: ObjectId
+    note: 结算单汇总单id
+    required: true
+
+  - name: payroll_plan_id
+    type: ObjectId
+    note: 服务费计划ID
+    required: true
+
+  - name: payroll_cycle_no
+    type: int
+    note: 服务费计划周期编号
+    required: true
+
+  - name: salary_compute_data_set_id
+    type: ObjectId
+    note: 服务费计算结果集ID
+    required: false
+
+  - name: payroll_cycle_type
+    type: int
+    note: '计算周期(1:按月,2:按日)'
+    required: true
+
+  - name: contract_belong_id
+    type: ObjectId
+    note: 合同归属
+    required: true
+
+  - name: start_date
+    note: 起始日期
+    required: true
+    type: int
+  - name: end_date
+    note: 结束日期
+    required: true
+    type: int
+  - name: month
+    note: 月
+    required: true
+    type: int
+  - name: year
+    note: 年
+    required: true
+    type: int
+
+  - name: order_count
+    type: int
+    note: 单量
+    required: true
+    default: 0
+
+  - name: order_money
+    type: int
+    note: 单量提成金额
+    required: true
+    default: 0
+  - name: work_money
+    type: int
+    note: 出勤补贴金额
+    required: true
+    default: 0
+  - name: qa_money
+    type: int
+    note: 质量补贴金额
+    required: true
+    default: 0
+  - name: operation_money
+    type: int
+    note: 管理补贴金额
+    required: true
+    default: 0
+  - name: payable_money
+    type: int
+    note: 应发总额
+    required: true
+    default: 0
+  - name: net_pay_money
+    type: int
+    note: 实发总额
+    required: true
+
+  - name: adjument_hr_dec_money
+    type: int
+    note: 人事扣款总额
+    required: true
+    default: 0
+  - name: adjument_hr_inc_money
+    type: int
+    note: 人事补款总额
+    required: true
+    default: 0
+  - name: adjument_staff_dec_money
+    type: int
+    note: 人员扣款总额
+    required: true
+    default: 0
+  - name: adjument_staff_inc_money
+    type: int
+    note: 人员补款总额
+    required: true
+    default: 0
+
+  - name: adjustment_item_lines
+    note: 扣补款项目明细
+    required: false
+    type: '[ObjectId]'
+
+  - name: operator_id
+    note: 操作人id
+    required: false
+    type: ObjectId
+  - name: debts_type
+    note: 欠款类型
+    required: true
+    type: int
+  - name: update_time
+    note: 更新时间
+    required: false
+    type: datetime
+
+  - name: pay_salary_state
+    note: 结算状态(1 正常 -1 缓发)
+    required: true
+    type: int
+    default: 1
+
+  - name: oa_application_order_id
+    type: ObjectId
+    note: OA审批单ID
+    required: false
+
+  - name: created_at
+    type: datetime
+    note: 创建时间
+    required: true
+    default: datetime.utcnow

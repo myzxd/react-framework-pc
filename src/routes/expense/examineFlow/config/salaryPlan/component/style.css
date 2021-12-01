@@ -1,0 +1,19 @@
+/* 服务费方案审批流配置审批流样式 */
+.app-comp-expense-salary-plan-component-examine-flow {
+  width: 100% !important;
+}
+
+/* 服务费方案审批流配置向下添一个加样式样式 */
+.app-comp-expense-salary-plan-component-copy {
+  margin-right: 6px !important;
+}
+
+/* 服务费方案审批流配置向下添多个加样式样式 */
+.app-comp-expense-salary-plan-component-copy-all {
+  margin-left: 6px !important;
+}
+
+/* 服务费发放审批流配置公共宽度*/
+.boss_expense_salary_issue_component_common_width {
+  width: 100% !important;
+}

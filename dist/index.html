@@ -1,0 +1,25 @@
+<!DOCTYPE html><html lang=en><head><meta charset=UTF-8><meta name=viewport content="width=device-width,initial-scale=1"><meta http-equiv=pragma content=no-cache><meta http-equiv=Cache-Control content="no-cache, must-revalidate"><meta http-equiv=expires content=0><script defer=defer src=js/1941.c9fdb017.js></script><script defer=defer src=js/main.51330f97.js></script><link href=css/1941.230311.css rel=stylesheet><link href=css/main.3e6b1c.css rel=stylesheet></head><body><div id=root></div><div id=message></div><script src=config.js?version></script><script>(function() {
+        var imageSrc = 'static/favicon@2x.ico';
+        var titleContent= '嗷嗷BOSS系统';
+        if (window.application.config.isShowQuhuoLogo) {
+          imageSrc = 'static/favicon@quhuo.ico';
+          titleContent= 'BOSS之家';
+        }
+        if (window.application.config.isShowXingDaLogo) {
+          imageSrc = 'static/xingdalogo.ico';
+          titleContent= '兴达科技';
+        }
+        if (window.application.config.isShowHuiLiuLogo) {
+          imageSrc = 'static/favicon.ico';
+          titleContent= '汇流';
+        }
+
+        var link = document.createElement('link');
+        var title = document.createElement('title');
+        title.innerHTML= titleContent;
+        link.type = 'image/x-icon';
+        link.rel = 'shortcut icon';
+        link.href = imageSrc;
+        document.getElementsByTagName('head')[0].appendChild(link);
+        document.getElementsByTagName('head')[0].appendChild(title);
+      }());</script></body></html>

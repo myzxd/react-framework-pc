@@ -1,0 +1,120 @@
+# 扣补款任务
+payroll_adjustment_task_breif:
+  meta: object_result
+  strict_mode: true
+  model_name: 'payroll_adjustment_task'
+  data:
+    _id:
+      type: 'object_id'
+    supplier_id:
+      type: 'object_id'
+    platform_code:
+      type: 'string'
+    city_code:
+      type: 'string'
+    biz_district_id:
+      type: 'object_id'
+    payroll_plan_id:
+      type: 'object_id'
+    payroll_plan_cycle_no:
+      type: 'int'
+    payroll_statement_id:
+      type: 'object_id'
+    fund_flag:
+      type: 'bool'
+    active_flag:
+      type: 'bool'
+    position_id:
+      type: 'int'
+    work_type:
+      type: 'int'
+    state:
+      type: 'int'
+    operator_id:
+      type: 'object_id'
+    start_date:
+      type: 'int'
+    end_date:
+      type: 'int'
+    created_at:
+      type: 'int'
+    submited_at:
+      type: 'int'
+    updated_at:
+      type: 'int'
+    file_key:
+      type: 'string'
+    storage_type:
+      type: 'int'
+    option_flag:
+      type: 'bool'
+    err_data:
+      type: '[string]'
+    group:
+      type: 'int'
+
+# 扣补款任务列表
+payroll_adjustment_task_list_item:
+  meta: object_result
+  strict_mode: true
+  extend: payroll_adjustment_task
+  data:
+    biz_district_name: {}
+    operator_info:
+      type: object_ref
+      schema: account_brief
+
+# 扣补款任务详情
+payroll_adjustment_task_detail:
+  meta: object_result
+  strict_mode: true
+  extend: payroll_adjustment_task
+  data: {}
+
+# 扣补款项目
+payroll_adjustment_item_breif:
+  meta: object_result
+  strict_mode: true
+  model_name: payroll_adjustment_item
+  data:
+    _id:
+      type: 'object_id'
+    supplier_id:
+      type: 'object_id'
+    identifier:
+      type: 'string'
+    name:
+      type: 'string'
+    definition:
+      type: 'string'
+    operator_id:
+      type: 'object_id'
+    template_id:
+      type: 'object_id'
+    state:
+      type: 'int'
+    platform_code:
+      type: 'string'
+    group:
+      type: 'int'
+    created_at:
+      type: 'datetime'
+    updated_at:
+      type: 'datetime'
+
+# 扣补款项目列表
+payroll_adjustment_item_list_item:
+  meta: object_result
+  strict_mode: true
+  extend: payroll_adjustment_item
+  data:
+    operator_info:
+      type: object_ref
+      schema: account_brief
+
+# 扣补款项目详情
+payroll_adjustment_item_detail:
+  meta: object_result
+  strict_mode: true
+  extend: payroll_adjustment_item
+  data: {}

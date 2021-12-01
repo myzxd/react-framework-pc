@@ -1,0 +1,133 @@
+- name: salary_compute_task
+  description: 服务费试算任务
+  schema:
+  - name: _id
+    required: true
+    type: ObjectId
+    note: _id
+  - name: supplier_id
+    required: true
+    type: ObjectId
+    note: 供应商id
+  - name: platform_code
+    required: true
+    type: string
+    note: 平台code
+  - name: city_code
+    required: true
+    type: string
+    note: 城市code
+  - name: biz_district_id
+    required: false
+    type: ObjectId
+    note: 商圈id
+  - name: plan_id
+    required: true
+    type: ObjectId
+    note: 服务费方案ID
+  - name: plan_version_id
+    required: true
+    type: ObjectId
+    note: 服务费方案版本ID
+  - name: plan_revision_id
+    required: true
+    type: ObjectId
+    note: 服务费方案修订版本号（规则每次修改均变化）
+  - name: compute_context
+    required: false
+    type: dict
+    note: 数据计算上下文环境
+  - name: state
+    required: true
+    type: int
+    default: 1
+    note: '状态(1:待试算,50:正在试算,100:试算成功,-100:试算失败)'
+  - name: created_at
+    required: true
+    type: datetime
+    default: datetime.utcnow
+    note: 创建时间
+  - name: updated_at
+    required: true
+    type: datetime
+    note: 更新时间
+  - name: from_date
+    required: true
+    type: int
+    note: 生效开始日期（yyyymmdd）
+  - name: to_date
+    required: false
+    type: int
+    note: 结束失效日期（yyyymmdd）
+
+- name: salary_compute_data_set
+  description: 人员服务费计算结果集
+  schema:
+  - name: _id
+    required: true
+    type: ObjectId
+    note: _id
+  - name: task_id
+    required: true
+    type: ObjectId
+    note: 计算任务ID
+  - name: session_id
+    required: true
+    type: ObjectId
+    note: 计算会话ID
+  - name: type
+    required: true
+    type: int
+    note: 类型 1（人员明细）2（商圈）3（城市）
+  - name: staff_id
+    required: true
+    type: ObjectId
+    note: 人员id
+  - name: supplier_id
+    required: true
+    type: ObjectId
+    note: 供应商id
+  - name: platform_code
+    required: true
+    type: string
+    note: 平台code
+  - name: work_type
+    required: false
+    type: int
+    note: 人员类型 3001（全职）3002（兼职）
+  - name: city_code
+    required: true
+    type: string
+    note: 城市code
+  - name: biz_district_id
+    required: false
+    type: ObjectId
+    note: 商圈id
+  - name: plan_id
+    required: true
+    type: ObjectId
+    note: 服务费方案ID
+  - name: plan_version_id
+    required: true
+    type: ObjectId
+    note: 服务费方案版本ID
+  - name: plan_revision_id
+    required: true
+    type: ObjectId
+    note: 服务费方案修订版本号（规则每次修改均变化）
+  - name: data
+    type: dict
+    note: 计算结果集
+  - name: start_date
+    required: true
+    type: int
+    note: 源数据起始日期(yyyymmdd)
+  - name: end_date
+    required: true
+    type: int
+    note: 源数据结束日期(yyyymmdd)
+  - name: created_at
+    required: true
+    type: datetime
+    note: 创建时间
+    default: datetime.utcnow

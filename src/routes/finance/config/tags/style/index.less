@@ -1,0 +1,128 @@
+// 修改tab bar 默认样式
+.app-comp-finance-card-container {
+  :global {
+    .ant-tabs-bar .ant-tabs-nav {
+      width: 100%;
+      min-width: 148px;
+    }
+    .ant-tabs-nav > div > .ant-tabs-tab-active {
+      color: #FF7700;
+      background: #FFE7D1;
+    }
+    .ant-tabs-nav > .ant-tabs-tab:hover {
+      color: #FF7700;
+    }
+    .ant-tabs-vertical > .ant-tabs-bar .ant-tabs-ink-bar {
+      background-color: #FF7700;
+    }
+    .ant-tabs-vertical > .ant-tabs-bar .ant-tabs-tab {
+      float: none;
+      margin-right: 0;
+      margin-bottom: 16px;
+      display: block;
+      padding: 8px 20px 8px 8px;
+    }
+    .ant-tabs > .ant-tabs-bar::before {
+      content: "\00A0\00A0\00A0\00A0标签名称";
+      font-size: 14px;
+      font-weight: 400;
+      display: inline-block;
+      vertical-align: middle;
+      background: url("../../../static/cylinder.png") no-repeat left;
+      background-size: 19%;
+    }
+  }
+}
+.app-comp-finance-data-span {
+  position: relative;
+  display: inline-block;
+  width:120px;
+}
+.app-comp-finance-tag-strong {
+  position: absolute;
+  left: 0px;
+  margin-top: 3px;
+  font-size: 13px;
+  font-weight: 400;
+}
+.app-comp-finance-data-strong {
+  position: relative;
+  display: inline-block;
+  font-weight: 300;
+  font-size: 12px;
+  width: 50px;
+  height: 18px;
+  padding: 0 10px;
+  border-radius: 9px;
+  text-align: center;
+  background-color: #fff;
+  right: -8px;
+  margin-top: 4px;
+}
+.app-comp-finance-tags-font {
+  font-size: 14px;
+  font-weight: 400;
+}
+.app-comp-finance-tags-font-width {
+  font-size: 20px;
+  width: 70px;
+}
+
+.app-comp-finance-tags-btn {
+  text-align: center;
+  line-height: 100px;
+  border: 1px dotted #ccc;
+  border-radius: 4;
+  margin: 10px 0 16px;
+}
+
+.app-comp-finance-tags-margin {
+  margin: 4px 4px;
+}
+.app-comp-finance-tags-border {
+  border: 1px solid #FF8010;
+  border-radius: 4;
+  margin: 10px 0 16px;
+}
+
+.app-comp-finance-tags-color {
+  color: #fff;
+}
+.app-comp-finance-tags-div-position {
+  text-align: center;
+  margin-top: 20;
+  margin-bottom: 20;
+  position: relative;
+}
+
+.app-comp-finance-tags-alert {
+  width: 40%;
+  display: inline;
+  text-align: left;
+  position: absolute;
+  left: 0;
+}
+.app-comp-finance-tags-btns {
+  margin-right: 30px;
+  width: 60;
+  background-color: #9b9b9b;
+  color: #fff;
+}
+
+// 蒙层容器样式
+.app-comp-finance-cover-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+// 蒙层样式
+.app-comp-finance-cover {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  left: 0;
+  top: 0;
+  background: rgba(255, 255, 255, 0.8);
+  z-index:999;
+}

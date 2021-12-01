@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: models/stores.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: models/stores.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * stores Model  // TODO: @韩健 命名有问题
+ *
+ * @module model/materials
+ */
+/* eslint no-underscore-dangle: ["error", { "allow": ["_meta", "_id"] }]*/
+import moment from 'moment';
+import { message } from 'antd';
+
+import {
+getStorgeMaterials,
+getChangeOfMaterials,
+getMessageOfItemList,
+getPickOrderDetailS,
+addItemIntoStore,
+editItemOfStore,
+getKnightMaterialsDetail,
+getDistributeOrderListS,
+editOrderToErrorListS,
+editDistributeOrderS,
+createDistributeOrderS,
+getDistributeDetailS,
+getPickOrderListS,
+createNewOrderS,
+auditSingleS,
+getMessageOfItemLists,
+} from './../services/stores.js';
+import { getEmployeeListS } from './../services/employee';
+
+import { Position, MaterialsOperationType } from '../application/define';
+import Modules from '../application/define/modules';
+import { copyNotEmptyProperty } from '../application/utils/index';
+import { authorize } from '../application/';
+
+export default {
+
+  /**
+   * 命名空间
+   * @default
+   */
+  namespace: 'materials',
+  /**
+   * 状态树
+   * @prop {object} materialsList 库存列表
+   * @prop {object} changeDetail 变动明细详情
+   * @prop {object} itemList 品目列表
+   * @prop {object} knightList 骑士列表
+   * @prop {object} KnightMaterialsDetail 物资详情
+   * @prop {object} pickOrderList 采购记录
+   * @prop {object} pickDetail 采购|报废|报错详情
+   * @prop {object} itemModules 新建采购单及报废单模板
+   * @prop {object} distributeLogList 物资分发记录
+   * @prop {object} distributeLogDetail 分发及退货详情
+   */
+  state: {
+    // 库存列表
+    materialsList: {
+      total_count: '',  // 总量
+      supplier_id: '',  // 供应商id
+      material_stock_list: [],  // 物资库存量
+    },
+
+    // 变动明细详情
+    changeDetail: {
+      platform_name: '',  // 平台
+      begin_stock_amount: '',  // 区初存量
+      end_stock_amount: '',  // 区末存量
+      city_name: '',  // 城市名
+      total_count: '', // 总量
+      material: '', // 物资
+      material_stock_detail_list: [],  // 物资库存详情
+    },
+
+    // 品目列表
+    itemList: {
+      material_list: [],  // 物资列表
+    },
+
+    // 品目详情
+    itemDetail: {
+      material_name: '',  // 物资名
+      material_type: '',  // 物资类型
+      purchase_price: '',  // 采购价
+      deposit: '',  // 库存
+      monthly_fee: '',  // 月费用
+      state: '',  // 状态
+    },
+
+    // 骑士列表
+    knightList: {
+      data: [],
+      _meta: {
+        result_count: 0,
+      },
+    },
+
+    // 物资详情
+    KnightMaterialsDetail: {
+      name: '--',       // 姓名
+      phone: '--',      // 手机号
+      position_id: '',  // 职位
+      supplier_name: '--', // 供应商
+      platform_name: '--', // 平台
+      city_name_joint: '--', // 城市
+      biz_district_name: '--', // 商圈
+      knight_material_list: [], // 骑士物资列表
+    },
+
+    // 采购记录
+    pickOrderList: {
+      data: [],
+      _meta: {
+        result_count: 0,
+      },
+    },
+
+    // 采购|报废|报错详情
+    pickDetail: {
+      material_list: [],  // 物资流动详情列表
+      real_item_amount: '',  // 实际总品数
+      order_id: '',  // 单号
+      created_at: '',  // 创建时间
+      applicant_phone: '',  // 操作人手机号
+      procurement_reason: '',  // 申请采购原因
+      applicant_name: '',  // 操作人姓名
+      real_handle_amount: '',  // 实际操作数量
+      handle_amount: '', // 操作数量
+      handle_type: '',  // 申请类型
+      total_money: '',  // 总金额
+      real_total_money: '',  // 实际总金额
+      item_amount: '',  // 总品数
+    },
+
+    // 新建采购单及报废单模板
+    itemModules: {
+      material_list: [],  // 物资列表
+    },
+
+    // 物资分发记录
+    distributeLogList: {
+      data: [],
+      _meta: {
+        result_count: 0,  // 分发结果
+      },
+    },
+
+    // 分发及退货详情
+    distributeLogDetail: {
+      material_list: [],  // 物资流动详情列表
+      real_item_amount: '',  // 实际总品数
+      order_id: '',  // 单号
+      created_at: '',  // 创建时间
+      applicant_phone: '',  // 操作人手机号
+      procurement_reason: '',  // 申请采购原因
+      applicant_name: '',  // 操作人姓名
+      real_handle_amount: '',  // 实际操作数量
+      handle_amount: '', // 操作数量
+      handle_type: '',  // 申请类型
+      total_money: '',  // 总金额
+      real_total_money: '',  // 实际总金额
+      item_amount: '',  // 总品数
+    },
+  },
+
+  /**
+   * @namespace materials/subscriptions
+   */
+  subscriptions: {
+    setup({ dispatch, history }) {
+      history.listen((location) => {
+        const { pathname } = location;
+        const accountId = authorize.account.id;
+        // 过滤不同的路由更新不同的state
+        switch (pathname) {
+        // 骑士列表
+          case '/Materiel/Stores/Knight':
+            dispatch({
+              type: 'getKnightListE',
+              payload: {
+                permission_id: Modules.ModuleMaterielStoresKnight.id,
+                position_id_list: [Position.postmanManager, Position.postman],
+                page: 1,
+                limit: 30,
+              },
+            });
+            break;
+          // 采购报废记录
+          case '/Materiel/Purchase/Log':
+            dispatch({
+              type: 'getPickOrderListE',
+              payload: {
+                account_id: accountId,
+                page: 1,
+                limit: 30,
+              },
+            });
+            break;
+          // 分发退货记录
+          case '/Materiel/Dispatcher/Log':
+            dispatch({
+              type: 'getDistributeOrderListE',
+              payload: {
+                account_id: accountId,
+                page: 1,
+                limit: 30,
+              },
+            });
+            break;
+          // 物资详情
+          case '/Materiel/Stores/Knight/Detail':
+            dispatch({
+              type: 'getKnightMaterialsDetailE',
+              payload: {
+                staff_id: location.query.id,
+              },
+            });
+            break;
+          // 单子详情
+          case '/Materiel/Purchase/Detail':
+            dispatch({
+              type: 'getPickOrderDetailE',
+              payload: {
+                order_id: location.query.id,
+              },
+            });
+            break;
+          // 单子报错
+          case '/Materiel/Purchase/ErrorOrder':
+            dispatch({
+              type: 'getPickOrderDetailE',
+              payload: {
+                order_id: location.query.id,
+              },
+            });
+            break;
+          // 分发退货单详情
+          case '/Materiel/Dispatcher/Detail':
+            dispatch({
+              type: 'getDistributeDetailE',
+              payload: {
+                order_id: location.query.id,
+              },
+            });
+            break;
+          case '/Materiel/Stores/Search':
+            dispatch({
+              type: 'getStoreListE',
+            });
+            break;
+          case '/Materiel/Stores/Item':
+            dispatch({
+              type: 'getItemListE',
+            });
+            break;
+          default:
+        }
+      });
+    },
+  },
+
+  /**
+   * @namespace materials/effects
+   */
+  effects: {
+    /**
+     * 获取库存列表
+     * @param {string} account_id 账户id
+     * @param {object} platform_list 平台列表
+     * @param {object} supplier_list 供应商列表
+     * @param {object} city_list 城市列表
+     * @param {string} start_date 开始时间
+     * @param {string} end_date 结束时间
+     * @memberof module:model/materials~materials/effects
+     */
+    *getStoreListE({ payload = {} }, { call, put }) {
+      const { platforms, suppliers, cities, createdStartDate, createdEndDate } = payload;
+      const accountId = authorize.account.id;
+      const params = {
+        account_id: accountId,
+        platform_list: platforms,
+        supplier_list: suppliers,
+        city_list: cities,
+        start_date: createdStartDate,
+        end_date: createdEndDate,
+      };
+      const result = yield call(getStorgeMaterials, copyNotEmptyProperty(params));
+      yield put({
+        type: 'getStoreListR',
+        payload: result,
+      });
+    },
+
+    /**
+     * 获取变更详情
+     * @param {string} supplier_id 供应商id
+     * @param {string} platform_code 平台id
+     * @param {string} city_spelling 城市id
+     * @param {string} material_item_id unknow
+     * @param {string} start_date 开始时间
+     * @param {string} end_date 结束时间
+     * @param {string} account_id 账户id
+     * @memberof module:model/materials~materials/effects
+     */
+    *getChangeDetailOfStoreE({ payload = {} }, { call, put }) {
+      const { supplierId, platformCode, citySpelling, startDate, endDate, materialItemId } = payload;
+      const accountId = authorize.account.id;
+
+      const params = {
+        supplier_id: supplierId,
+        platform_code: platformCode,
+        city_spelling: citySpelling,
+        start_date: startDate,
+        end_date: endDate,
+        material_item_id: materialItemId,
+        account_id: accountId,
+      };
+      const result = yield call(getChangeOfMaterials, params);
+      yield put({
+        type: 'getChangeDetailOfStoreR',
+        payload: result,
+      });
+    },
+
+    /**
+     * 获取品目列表
+     * @param {object} platform_list 平台列表
+     * @param {object} supplier_list 城市列表
+     * @param {string} permission_id unknow
+     * @param {string} account_id 账户id
+     * @memberof module:model/materials~materials/effects
+     */
+    *getItemListE({ payload = {} }, { call, put }) {
+      const { platforms, suppliers } = payload;
+      const accountId = authorize.account.id;
+      const params = {
+        platform_list: platforms,
+        supplier_list: suppliers,
+        account_id: accountId,
+        permission_id: Modules.ModuleMaterielStoresItem.id,
+      };
+
+      const result = yield call(getMessageOfItemList, copyNotEmptyProperty(params));
+      yield put({
+        type: 'getItemListR',
+        payload: result,
+      });
+    },
+
+    /**
+     * 添加品目
+     * @param {number} deposit 押金
+     * @param {string} material_name 物资名称
+     * @param {string} material_type 物资类型
+     * @param {number} monthly_fee 物资费用
+     * @param {number} purchase_price 成本
+     * @param {number} state 状态
+     * @param {string} supplier_id 供应商id
+     * @param {string} platform_code
+     * @param {string} account_id 账户id
+     * @memberof module:model/materials~materials/effects
+     */
+    *addItemOfTemplateE({ payload = {} }, { call, put }) {
+      const { values: { deposit, material_name, material_type, monthly_fee, purchase_price, state, suppliers, platforms } } = payload;
+      const accountId = authorize.account.id;
+      const params = {
+        deposit,
+        material_name,
+        material_type,
+        monthly_fee,
+        purchase_price,
+        state,
+        supplier_id: suppliers,
+        platform_code: platforms,
+        account_id: accountId,
+      };
+
+      const result = yield call(addItemIntoStore, params);
+      if (result.ok) {
+        message.success('添加成功');
+        yield put({
+          type: 'getItemListE',
+          payload: {
+            suppliers: [suppliers],
+            platforms: [platforms],
+          },
+        });
+      }
+    },
+
+    /**
+     * 缓存品目详情
+     * @param {number} deposit 押金
+     * @param {string} material_name 物资名称
+     * @param {string} material_type 物资类型
+     * @param {number} monthly_fee 物资费用
+     * @param {number} purchase_price 成本
+     * @param {number} state 状态
+     * @param {string} account_id 账户id
+     * @param {string} _id id
+     * @memberof module:model/materials~materials/effects
+     */
+    *editItemDetailE({ payload = {} }, { call, put }) {
+      const { values: { deposit, material_name, material_type, monthly_fee, purchase_price, state, suppliers, platforms }, id } = payload;
+      const accountId = authorize.account.id;
+      const params = {
+        deposit,
+        material_name,
+        material_type,
+        monthly_fee,
+        purchase_price,
+        state,
+        account_id: accountId,
+        _id: id,
+      };
+
+      const result = yield call(editItemOfStore, params);
+      if (result.ok) {
+        message.success('编辑成功');
+        yield put({
+          type: 'getItemListE',
+          payload: {
+            platforms: [platforms],
+            suppliers: [suppliers],
+          },
+        });
+      }
+    },
+
+    /**
+     * 获取骑士列表
+     * @param {object} supplier_list 供应商列表
+     * @param {object} platform_code_list 平台列表
+     * @param {object} city_spelling_list 城市列表
+     * @param {object} biz_district_id_list 商圈列表
+     * @param {string} name 骑士姓名
+     * @param {number} phone 手机号
+     * @param {string} account_id 账户id
+     * @param {object} position_id_list 职位列表
+     * @param {string} permission_id 权限id
+     * @param {number} state 状态
+     * @param {number} limit 每页条数
+     * @param {number} page 页码
+     * @memberof module:model/materials~materials/effects
+     */
+    *getKnightListE({ payload = {} }, { call, put }) {
+      const { suppliers, platforms, cities, districts, name, phone, limit, page, state } = payload;
+      const accountId = authorize.account.id;
+
+      const params = {
+        supplier_list: suppliers,
+        platform_code_list: platforms,
+        city_spelling_list: cities,
+        biz_district_id_list: districts,
+        name,
+        phone,
+        account_id: accountId,
+        position_id_list: [Position.postmanManager, Position.postman],
+        permission_id: Modules.ModuleEmployeeUpdate.id,
+        state,
+        limit,
+        page,
+      };
+      const result = yield call(getEmployeeListS, copyNotEmptyProperty(params));
+      yield put({
+        type: 'getKnightListR',
+        payload: result,
+      });
+    },
+
+    /**
+     * 获取骑士物资详情
+     * @param {string} account_id 账户id
+     * @memberof module:model/materials~materials/effects
+     */
+    *getKnightMaterialsDetailE({ payload }, { call, put }) {
+      const param = payload;
+      const accountId = authorize.account.id;
+      param.account_id = accountId;
+      const result = yield call(getKnightMaterialsDetail, param);
+      yield put({
+        type: 'getKnightMaterialsDetailR',
+        payload: result,
+      });
+    },
+
+    /**
+     * 获取订单记录
+     * @param {string} supplier_list 供应商列表
+     * @param {object} platform_code_list 平台列表
+     * @param {object} city_spelling_list 城市列表
+     * @param {string} account_id 账户id
+     * @param {string} order_id 订单id
+     * @param {object} flow_state_list unknow
+     * @param {string} start_date 开始时间
+     * @param {string} end_date 结束时间
+     * @param {number} limit 每页条数
+     * @param {number} page 页码
+     * @memberof module:model/materials~materials/effects
+     */
+    *getPickOrderListE({ payload = {} }, { call, put }) {
+      const { suppliers, platforms, cities, order_id, flow_state_list, date, limit, page } = payload;
+      const accountId = authorize.account.id;
+
+      const params = {
+        supplier_list: suppliers,
+        platform_code_list: platforms,
+        city_spelling_list: cities,
+        account_id: accountId,
+        order_id,
+        flow_state_list,
+        start_date: date &amp;&amp; moment(date[0]).format('YYYY-MM-DD'),
+        end_date: date &amp;&amp; moment(date[1]).format('YYYY-MM-DD'),
+        limit,
+        page,
+      };
+
+      const result = yield call(getPickOrderListS, copyNotEmptyProperty(params));
+      yield put({
+        type: 'getPickOrderListR',
+        payload: result,
+      });
+    },
+
+    /**
+     * 获取订单详情
+     * @param {string} account_id 账户id
+     * @memberof module:model/materials~materials/effects
+     */
+    *getPickOrderDetailE({ payload }, { call, put }) {
+      const param = payload;
+      const accountId = authorize.account.id;
+      param.account_id = accountId;
+      const result = yield call(getPickOrderDetailS, param);
+      yield put({
+        type: 'getPickOrderDetailR',
+        payload: result,
+      });
+    },
+
+    /**
+     * 审核采购及报废、报错
+     * @param {string} account_id 账户id
+     * @param {number} page 页码
+     * @param {number} limit 每页条码
+     * @memberof module:model/materials~materials/effects
+     */
+    // TODO: @韩健 命名有问题
+    *auditSingleE({ payload }, { call, put }) {
+      const param = payload;
+      const accountId = authorize.account.id;
+      param.account_id = accountId;
+      const result = yield call(auditSingleS, param);
+      if (result.ok) {
+        message.success('操作成功');
+        window.location.href = '/#/Materiel/Purchase/Log';
+        yield put({
+          type: 'getPickOrderListE',
+          payload: {
+            account_id: accountId,
+            page: 1,
+            limit: 30,
+          },
+        });
+      }
+    },
+
+    /**
+     * 新建采购单及报废单的品目模板
+     * @param {object} supplier_list 供应商列表
+     * @param {object} platform_code 平台列表
+     * @param {object} city_spelling 城市列表
+     * @param {string} account_id 账户id
+     * @param {boolean} option 报废
+     * @memberof module:model/materials~materials/effects
+     */
+    // TODO: @韩健 命名有问题
+    *createBaseItemListE({ payload = {} }, { call, put }) {
+      const { suppliers, platforms, cities, handle_type } = payload;
+      const accountId = authorize.account.id;
+
+      const params = {
+        supplier_list: suppliers ? [suppliers] : null,
+        platform_code: platforms,
+        city_spelling: cities,
+        account_id: accountId,
+        option: Number(handle_type) === MaterialsOperationType.scrap ? true : '',    // 报废
+      };
+
+      const result = yield call(getMessageOfItemLists, copyNotEmptyProperty(params));
+      yield put({
+        type: 'createBaseItemListR',
+        payload: result,
+      });
+    },
+
+    /**
+     * 生成采购单|报废单
+     * @param {number} handle_type unknow
+     * @param {object} supplier_id 供应商列表
+     * @param {object} platform_code 平台列表
+     * @param {object} city_spelling 城市列表
+     * @param {object} material_list 物资列表
+     * @param {unknow} procurement_reason unknow
+     * @param {number} return_money unknow
+     * @param {string} account_id 账户id
+     * @memberof module:model/materials~materials/effects
+     */
+    // TODO: @韩健 命名有问题
+    *createNewOrderE({ payload = {} }, { call }) {
+      const { suppliers, platforms, cities, handle_type, material_list, procurement_reason, return_money } = payload;
+      const accountId = authorize.account.id;
+      const params = {
+        handle_type: Number(handle_type),
+        supplier_id: suppliers,
+        platform_code: platforms,
+        city_spelling: cities,
+        material_list,
+        procurement_reason,
+        return_money,
+        account_id: accountId,
+      };
+
+      const result = yield call(createNewOrderS, copyNotEmptyProperty(params));
+      if (result.ok) {
+        message.success(`创建成功,单号为${result.order_id}`, 5);
+        window.location.href = '/#/Materiel/Purchase/Log';
+      }
+    },
+
+    /**
+     * 单子报错
+     * @param {string} account_id 账户id
+     * @memberof module:model/materials~materials/effects
+     */
+    *editOrderToErrorListE({ payload }, { call }) {
+      const param = payload;
+      const accountId = authorize.account.id;
+      param.account_id = accountId;
+      const result = yield call(editOrderToErrorListS, param);
+      if (result.ok) {
+        message.success(`创建成功,单号为${result.order_id}`, 5);
+        window.location.href = '/#/Materiel/Purchase/Log';
+      }
+    },
+
+    /**
+     * 新建物品分发单
+     * @param {string} account_id 账户id
+     * @param {string} staff_id 员工Id
+     * @param {object} city_spelling 城市列表
+     * @param {object} material_list 物资列表
+     * @memberof module:model/materials~materials/effects
+     */
+    *createDistributeOrderE({ payload = {} }, { call }) {
+      const { knight, cities, materialList } = payload;
+      const accountId = authorize.account.id;
+      const params = {
+        account_id: accountId,
+        staff_id: knight,
+        city_spelling: cities,
+        material_list: materialList,
+      };
+      const result = yield call(createDistributeOrderS, params);
+      if (result.ok) {
+        message.success(`创建成功,单号为${result.order_id}`, 5);
+        window.location.href = '/#/Materiel/Dispatcher/Log';
+      }
+    },
+
+    /**
+     * 获取分发退货记录
+     * @param {object} supplier_list 供应商列表
+     * @param {object} platform_code_list 平台列表
+     * @param {object} city_spelling_list 城市列表
+     * @param {string} account_id 账户id
+     * @param {string} order_id 订单id
+     * @param {unknow} flow_state unknow
+     * @param {string} start_date 开始时间
+     * @param {string} end_date 结束时间
+     * @param {number} limit 每页条数
+     * @param {number} page 页码
+     * @memberof module:model/materials~materials/effects
+     */
+    *getDistributeOrderListE({ payload = {} }, { call, put }) {
+      const { suppliers, platforms, cities, order_id, flow_state, date, limit, page } = payload;
+      const accountId = authorize.account.id;
+
+      const params = {
+        supplier_list: suppliers,
+        platform_code_list: platforms,
+        city_spelling_list: cities,
+        account_id: accountId,
+        order_id,
+        flow_state,
+        start_date: date &amp;&amp; moment(date[0]).format('YYYY-MM-DD'),
+        end_date: date &amp;&amp; moment(date[1]).format('YYYY-MM-DD'),
+        limit,
+        page,
+      };
+
+      const result = yield call(getDistributeOrderListS, copyNotEmptyProperty(params));
+      yield put({
+        type: 'getDistributeOrderListR',
+        payload: result,
+      });
+    },
+
+    /**
+     * 分发退货单的审核
+     * @param {string} account_id 账户id
+     * @param {number} limit 每页条数
+     * @param {number} page 页码
+     * @memberof module:model/materials~materials/effects
+     */
+    // TODO: @韩健 命名有问题
+    *editDistributeOrderE({ payload }, { call, put }) {
+      const param = payload;
+      const accountId = authorize.account.id;
+      param.account_id = accountId;
+      const result = yield call(editDistributeOrderS, param);
+      if (result.ok) {
+        message.success('操作成功');
+        window.location.href = '/#/Materiel/Dispatcher/Log';
+        yield put({
+          type: 'getDistributeOrderListE',
+          payload: {
+            account_id: accountId,
+            page: 1,
+            limit: 30,
+          },
+        });
+      }
+    },
+
+    /**
+     * 分发退货详情
+     * @param {string} account_id 账户id
+     * @memberof module:model/materials~materials/effects
+     */
+    *getDistributeDetailE({ payload }, { call, put }) {
+      const param = payload;
+      const accountId = authorize.account.id;
+      param.account_id = accountId;
+      const result = yield call(getDistributeDetailS, param);
+      yield put({
+        type: 'getDistributeDetailR',
+        payload: result,
+      });
+    },
+
+  },
+
+  /**
+   * @namespace materials/reducers
+   */
+  reducers: {
+    /**
+     * 库存列表
+     * @returns {object} 更新 materialsList
+     * @memberof module:model/materials~materials/reducers
+     */
+    // TODO: @韩健 命名有问题
+    getStoreListR(state, action) {
+      return {
+        ...state,
+        materialsList: action.payload,
+      };
+    },
+
+    /**
+     * 更改详情
+     * @returns {object} 更新 changeDetail
+     * @memberof module:model/materials~materials/reducers
+     */
+    // TODO: @韩健 命名有问题
+    getChangeDetailOfStoreR(state, action) {
+      return {
+        ...state,
+        changeDetail: action.payload,
+      };
+    },
+
+    /**
+     * 品目列表
+     * @returns {object} 更新 itemList
+     * @memberof module:model/materials~materials/reducers
+     */
+    // TODO: @韩健 命名有问题
+    getItemListR(state, action) {
+      return {
+        ...state,
+        itemList: action.payload,
+      };
+    },
+
+    /**
+     * 品目详情
+     * @returns {object} 更新 itemDetail
+     * @memberof module:model/materials~materials/reducers
+     */
+    // TODO: @韩健 命名有问题
+    bundleItemDetailR(state, action) {
+      const result = {};
+      Object.assign(result, action.payload);
+      return {
+        ...state,
+        itemDetail: result,
+      };
+    },
+
+    /**
+     * 骑士列表
+     * @returns {object} 更新 knightList
+     * @memberof module:model/materials~materials/reducers
+     */
+    // TODO: @韩健 命名有问题
+    getKnightListR(state, action) {
+      return {
+        ...state,
+        knightList: action.payload,
+      };
+    },
+
+    /**
+     * 物资详情
+     * @returns {object} 更新 KnightMaterialsDetail
+     * @memberof module:model/materials~materials/reducers
+     */
+    // TODO: @韩健 命名有问题
+    getKnightMaterialsDetailR(state, action) {
+      return {
+        ...state,
+        KnightMaterialsDetail: action.payload,
+      };
+    },
+
+    /**
+     * 采购单列表
+     * @returns {object} 更新 pickOrderList
+     * @memberof module:model/materials~materials/reducers
+     */
+    // TODO: @韩健 命名有问题
+    getPickOrderListR(state, action) {
+      return {
+        ...state,
+        pickOrderList: action.payload,
+      };
+    },
+
+    /**
+     * 单子详情
+     * @returns {object} 更新 pickDetail
+     * @memberof module:model/materials~materials/reducers
+     */
+    // TODO: @韩健 命名有问题
+    getPickOrderDetailR(state, action) {
+      return {
+        ...state,
+        pickDetail: action.payload,
+      };
+    },
+
+    /**
+     * 添加采购单报废单的模板
+     * @returns {object} 更新 itemModules
+     * @memberof module:model/materials~materials/reducers
+     */
+    // TODO: @韩健 命名有问题
+    createBaseItemListR(state, action) {
+      return {
+        ...state,
+        itemModules: action.payload,
+      };
+    },
+
+    /**
+     * 分发退货记录
+     * @returns {object} 更新 distributeLogList
+     * @memberof module:model/materials~materials/reducers
+     */
+    // TODO: @韩健 命名有问题
+    getDistributeOrderListR(state, action) {
+      return {
+        ...state,
+        distributeLogList: action.payload,
+      };
+    },
+
+    /**
+     * 分发退货详情
+     * @returns {object} 更新 distributeLogDetail
+     * @memberof module:model/materials~materials/reducers
+     */
+    // TODO: @韩健 命名有问题
+    getDistributeDetailR(state, action) {
+      return {
+        ...state,
+        distributeLogDetail: action.payload,
+      };
+    },
+
+    /**
+     * 清空
+     * @returns {object} 更新 itemModules
+     * @memberof module:model/materials~materials/reducers
+     */
+    // TODO: @韩健 命名有问题
+    removeMaterialListR(state) {
+      return {
+        ...state,
+        itemModules: {
+          material_list: [],
+        },
+      };
+    },
+
+    /**
+     * 清空详情物资列表
+     * @returns {object} 更新 pickDetail
+     * @memberof module:model/materials~materials/reducers
+     */
+    // TODO: @韩健 命名有问题
+    removePickDetailMaterialListR(state) {
+      return {
+        ...state,
+        pickDetail: {
+          ...state.pickDetail,
+          material_list: [],
+        },
+      };
+    },
+
+    /**
+     * 晴空物资库存列表
+     * @returns {object} 更新 materialsList
+     * @memberof module:model/materials~materials/reducers
+     */
+    // TODO: @韩健 命名有问题
+    removeMaterialStockListR(state) {
+      return {
+        ...state,
+        materialsList: {},
+      };
+    },
+
+    /**
+     * 清空品目列表
+     * @returns {object} 更新 itemList
+     * @memberof module:model/materials~materials/reducers
+     */
+    // TODO: @韩健 命名有问题
+    removeItemListR(state) {
+      return {
+        ...state,
+        itemList: {
+          material_list: [],
+        },
+      };
+    },
+  },
+
+};
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-model_account_exception.html">model/account/exception</a></li><li><a href="module-model_account_manage.html">model/account/manage</a></li><li><a href="module-model_accountInfo.html">model/accountInfo</a></li><li><a href="module-model_admin_manage.html">model/admin/manage</a></li><li><a href="module-model_analysis.html">model/analysis</a></li><li><a href="module-model_application_common.html">model/application/common</a></li><li><a href="module-model_application_core.html">model/application/core</a></li><li><a href="module-model_application_files.html">model/application/files</a></li><li><a href="module-model_application_setting.html">model/application/setting</a></li><li><a href="module-model_application_subscription.html">model/application/subscription</a></li><li><a href="module-model_applicationManage.html">model/applicationManage</a></li><li><a href="module-model_district_manage.html">model/district/manage</a></li><li><a href="module-model_employee_contract.html">model/employee/contract</a></li><li><a href="module-model_employee_manage.html">model/employee/manage</a></li><li><a href="module-model_employee_transport.html">model/employee/transport</a></li><li><a href="module-model_expense_approval.html">model/expense/approval</a></li><li><a href="module-model_expense_borrowingRepaments.html">model/expense/borrowingRepaments</a></li><li><a href="module-model_expense_costOrder.html">model/expense/costOrder</a></li><li><a href="module-model_expense_examineFlow.html">model/expense/examineFlow</a></li><li><a href="module-model_expense_examineOrder.html">model/expense/examineOrder</a></li><li><a href="module-model_expense_houseContract.html">model/expense/houseContract</a></li><li><a href="module-model_expense_subject.html">model/expense/subject</a></li><li><a href="module-model_expense_type.html">model/expense/type</a></li><li><a href="module-model_finance_plan.html">model/finance/plan</a></li><li><a href="module-model_finance_task.html">model/finance/task</a></li><li><a href="module-model_financeFundsConfig.html">model/financeFundsConfig</a></li><li><a href="module-model_financeRulesGenerator.html">model/financeRulesGenerator</a></li><li><a href="module-model_financeSummaryManage.html">model/financeSummaryManage</a></li><li><a href="module-model_inquireModel.html">model/inquireModel</a></li><li><a href="module-model_materials.html">model/materials</a></li><li><a href="module-model_operationManage.html">model/operationManage</a></li><li><a href="module-model_supplier_manage.html">model/supplier/manage</a></li><li><a href="module-model_supply_deductions.html">model/supply/deductions</a></li><li><a href="module-model_supply_details.html">model/supply/details</a></li><li><a href="module-model_supply_distribution.html">model/supply/distribution</a></li><li><a href="module-model_supply_procurement.html">model/supply/procurement</a></li><li><a href="module-model_supply_set.html">model/supply/set</a></li><li><a href="module-model_system.html">model/system</a></li><li><a href="module-model_system_city.html">model/system/city</a></li><li><a href="module-model_system_download.html">model/system/download</a></li><li><a href="module-model_system_manage.html">model/system/manage</a></li><li><a href="module-model_system_recommendedCompany.html">model/system/recommendedCompany</a></li><li><a href="module-model_upload.html">model/upload</a></li><li><a href="module-services_account.html">services/account</a></li><li><a href="module-services_analysis.html">services/analysis</a></li><li><a href="module-services_employee.html">services/employee</a></li><li><a href="module-services_expense.html">services/expense</a></li><li><a href="module-services_expense_borrowingRepayment.html">services/expense/borrowingRepayment</a></li><li><a href="module-services_expense_costOrder.html">services/expense/costOrder</a></li><li><a href="module-services_expense_examineOrder.html">services/expense/examineOrder</a></li><li><a href="module-services_expense_houseContract.html">services/expense/houseContract</a></li><li><a href="module-services_finance.html">services/finance</a></li><li><a href="module-services_finance_funds.html">services/finance/funds</a></li><li><a href="module-services_inquire.html">services/inquire</a></li><li><a href="module-services_login.html">services/login</a></li><li><a href="module-services_salary.html">services/salary</a></li><li><a href="module-services_setting.html">services/setting</a></li><li><a href="module-services_stores.html">services/stores</a></li><li><a href="module-services_system.html">services/system</a></li><li><a href="module-services_system_city.html">services/system/city</a></li><li><a href="module-services_system_recommendedCompany.html">services/system/recommendedCompany</a></li><li><a href="module-services_system_supplier.html">services/system/supplier</a></li><li><a href="module-services_upload.html">services/upload</a></li></ul><h3>Namespaces</h3><ul><li><a href="module-model_account_exception-account_exception_effects.html">account/exception/effects</a></li><li><a href="module-model_account_exception-account_exception_reducers.html">account/exception/reducers</a></li><li><a href="module-model_account_exception-account_exception_subscriptions.html">account/exception/subscriptions</a></li><li><a href="module-model_account_manage-account_manage_effects.html">account/manage/effects</a></li><li><a href="module-model_account_manage-account_manage_reducers.html">account/manage/reducers</a></li><li><a href="module-model_accountInfo-account_accountInfo_effects.html">account/accountInfo/effects</a></li><li><a href="module-model_accountInfo-account_accountInfo_reducers.html">account/accountInfo/reducers</a></li><li><a href="module-model_accountInfo-account_accountInfo_subscriptions.html">account/accountInfo/subscriptions</a></li><li><a href="module-model_admin_manage-admin_manage_effects.html">admin/manage/effects</a></li><li><a href="module-model_admin_manage-admin_manage_reducers.html">admin/manage/reducers</a></li><li><a href="module-model_admin_manage-admin_manage_subscriptions.html">admin/manage/subscriptions</a></li><li><a href="module-model_analysis-analysis_effects.html">analysis/effects</a></li><li><a href="module-model_analysis-analysis_reducers.html">analysis/reducers</a></li><li><a href="module-model_analysis-analysis_subscriptions.html">analysis/subscriptions</a></li><li><a href="module-model_application_common-application_common_effects.html">application/common/effects</a></li><li><a href="module-model_application_common-application_common_reducers.html">application/common/reducers</a></li><li><a href="module-model_application_core-application_core_effects.html">application/core/effects</a></li><li><a href="module-model_application_files-application_files_effects.html">application/files/effects</a></li><li><a href="module-model_application_files-application_files_reducers.html">application/files/reducers</a></li><li><a href="module-model_application_setting-application_setting_effects.html">application/setting/effects</a></li><li><a href="module-model_application_setting-application_setting_reducers.html">application/setting/reducers</a></li><li><a href="module-model_application_subscription-application_subscription_subscriptions.html">application/subscription/subscriptions</a></li><li><a href="module-model_applicationManage-applicationManage_effects.html">applicationManage/effects</a></li><li><a href="module-model_applicationManage-applicationManage_reducers.html">applicationManage/reducers</a></li><li><a href="module-model_district_manage-district_manage_effects.html">district/manage/effects</a></li><li><a href="module-model_district_manage-district_manage_reducers.html">district/manage/reducers</a></li><li><a href="module-model_employee_contract-employee_contract_effects.html">employee/contract/effects</a></li><li><a href="module-model_employee_contract-employee_contract_reducers.html">employee/contract/reducers</a></li><li><a href="module-model_employee_manage-employee_manage_effects.html">employee/manage/effects</a></li><li><a href="module-model_employee_manage-employee_manage_reducers.html">employee/manage/reducers</a></li><li><a href="module-model_employee_transport-employee_transport_effects.html">employee/transport/effects</a></li><li><a href="module-model_employee_transport-employee_transport_reducers.html">employee/transport/reducers</a></li><li><a href="module-model_expense_approval-expense_approval_effects.html">expense/approval/effects</a></li><li><a href="module-model_expense_approval-expense_approval_reducers.html">expense/approval/reducers</a></li><li><a href="module-model_expense_approval-expense_approval_subscriptions.html">expense/approval/subscriptions</a></li><li><a href="module-model_expense_borrowingRepaments-expense_borrowingRepayment_effects.html">expense/borrowingRepayment/effects</a></li><li><a href="module-model_expense_borrowingRepaments-expense_costOrder_reducers.html">expense/costOrder/reducers</a></li><li><a href="module-model_expense_costOrder-expense_costOrder_effects.html">expense/costOrder/effects</a></li><li><a href="module-model_expense_costOrder-expense_costOrder_reducers.html">expense/costOrder/reducers</a></li><li><a href="module-model_expense_examineFlow-expense_examineFlow_effects.html">expense/examineFlow/effects</a></li><li><a href="module-model_expense_examineFlow-expense_examineFlow_reducers.html">expense/examineFlow/reducers</a></li><li><a href="module-model_expense_examineOrder-expense_examineOrder_effects.html">expense/examineOrder/effects</a></li><li><a href="module-model_expense_examineOrder-expense_examineOrder_reducers.html">expense/examineOrder/reducers</a></li><li><a href="module-model_expense_houseContract-expense_houseContract_effects.html">expense/houseContract/effects</a></li><li><a href="module-model_expense_houseContract-expense_houseContract_reducers.html">expense/houseContract/reducers</a></li><li><a href="module-model_expense_houseContract-expense_houseContract_subscriptions.html">expense/houseContract/subscriptions</a></li><li><a href="module-model_expense_subject-expense_subject_effects.html">expense/subject/effects</a></li><li><a href="module-model_expense_subject-expense_subject_reducers.html">expense/subject/reducers</a></li><li><a href="module-model_expense_subject-expense_subject_subscriptions.html">expense/subject/subscriptions</a></li><li><a href="module-model_expense_type-expense_type_effects.html">expense/type/effects</a></li><li><a href="module-model_expense_type-expense_type_reducers.html">expense/type/reducers</a></li><li><a href="module-model_finance_plan-finance_plan_effects.html">finance/plan/effects</a></li><li><a href="module-model_finance_plan-finance_plan_reducers.html">finance/plan/reducers</a></li><li><a href="module-model_finance_task-finance_task_effects.html">finance/task/effects</a></li><li><a href="module-model_finance_task-finance_task_reducers.html">finance/task/reducers</a></li><li><a href="module-model_financeFundsConfig-financeFundsConfig_effects.html">financeFundsConfig/effects</a></li><li><a href="module-model_financeFundsConfig-financeFundsConfig_reducers.html">financeFundsConfig/reducers</a></li><li><a href="module-model_financeRulesGenerator-financeRulesGenerator_effects.html">financeRulesGenerator/effects</a></li><li><a href="module-model_financeRulesGenerator-financeRulesGenerator_reducers.html">financeRulesGenerator/reducers</a></li><li><a href="module-model_financeSummaryManage-financeSummaryManage_effects.html">financeSummaryManage/effects</a></li><li><a href="module-model_financeSummaryManage-financeSummaryManage_reducers.html">financeSummaryManage/reducers</a></li><li><a href="module-model_financeSummaryManage-financeSummaryManage_subscriptions.html">financeSummaryManage/subscriptions</a></li><li><a href="module-model_inquireModel-inquireModel_effects.html">inquireModel/effects</a></li><li><a href="module-model_inquireModel-inquireModel_reducers.html">inquireModel/reducers</a></li><li><a href="module-model_materials-financeConfigIndex_effects.html">financeConfigIndex/effects</a></li><li><a href="module-model_materials-financeConfigIndex_reducers.html">financeConfigIndex/reducers</a></li><li><a href="module-model_materials-financeConfigTags_effects.html">financeConfigTags/effects</a></li><li><a href="module-model_materials-financeConfigTags_reducers.html">financeConfigTags/reducers</a></li><li><a href="module-model_materials-financeFundsManage_effects.html">financeFundsManage/effects</a></li><li><a href="module-model_materials-financeFundsManage_reducers.html">financeFundsManage/reducers</a></li><li><a href="module-model_materials-materials_effects.html">materials/effects</a></li><li><a href="module-model_materials-materials_reducers.html">materials/reducers</a></li><li><a href="module-model_materials-materials_subscriptions.html">materials/subscriptions</a></li><li><a href="module-model_operationManage-operationManage_effects.html">operationManage/effects</a></li><li><a href="module-model_operationManage-operationManage_reducers.html">operationManage/reducers</a></li><li><a href="module-model_supplier_manage-supplier_manage_effects.html">supplier/manage/effects</a></li><li><a href="module-model_supplier_manage-supplier_manage_reducers.html">supplier/manage/reducers</a></li><li><a href="module-model_supply_deductions-supply_deductions_effects.html">supply/deductions/effects</a></li><li><a href="module-model_supply_deductions-supply_deductions_reducers.html">supply/deductions/reducers</a></li><li><a href="module-model_supply_deductions-supply_deductSummarize_effects.html">supply/deductSummarize/effects</a></li><li><a href="module-model_supply_deductions-supply_deductSummarize_reducers.html">supply/deductSummarize/reducers</a></li><li><a href="module-model_supply_details-supply_details_effects.html">supply/details/effects</a></li><li><a href="module-model_supply_details-supply_details_reducers.html">supply/details/reducers</a></li><li><a href="module-model_supply_distribution-supply_distribution_effects.html">supply/distribution/effects</a></li><li><a href="module-model_supply_distribution-supply_distribution_reducers.html">supply/distribution/reducers</a></li><li><a href="module-model_supply_procurement-supply_procurement_effects.html">supply/procurement/effects</a></li><li><a href="module-model_supply_procurement-supply_procurement_reducers.html">supply/procurement/reducers</a></li><li><a href="module-model_supply_set-supply_set_effects.html">supply/set/effects</a></li><li><a href="module-model_supply_set-supply_set_reducers.html">supply/set/reducers</a></li><li><a href="module-model_system_city-system_city_effects.html">system/city/effects</a></li><li><a href="module-model_system_city-system_city_reducers.html">system/city/reducers</a></li><li><a href="module-model_system_download-system_download_effects.html">system/download/effects</a></li><li><a href="module-model_system_download-system_download_reducers.html">system/download/reducers</a></li><li><a href="module-model_system_manage-system_manage_effects.html">system/manage/effects</a></li><li><a href="module-model_system_manage-system_manage_reducers.html">system/manage/reducers</a></li><li><a href="module-model_system_recommendedCompany-system_recommendedCompany_effects.html">system/recommendedCompany/effects</a></li><li><a href="module-model_system_recommendedCompany-system_recommendedCompany_reducers.html">system/recommendedCompany/reducers</a></li><li><a href="module-model_system-system_effects.html">system/effects</a></li><li><a href="module-model_system-system_reducers.html">system/reducers</a></li><li><a href="module-model_system-system_subscriptions.html">system/subscriptions</a></li><li><a href="module-model_upload-upload_effects.html">upload/effects</a></li><li><a href="module-model_upload-upload_reducers.html">upload/reducers</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Sun Apr 28 2019 11:25:15 GMT+0800 (CST)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

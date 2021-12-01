@@ -1,0 +1,10 @@
+/* 科目设置创建科目编辑 */
+.app-comp-expense-subject-components-coding {
+  width: 50% !important;
+  margin-left: 5px !important;
+}
+
+/* 科目设置创建科目描述*/
+.app-comp-expense-subject-components-describe {
+  height: 60px !important;
+}

@@ -1,0 +1,721 @@
+account_brief:
+  strict_mode: true
+  meta: object_result
+  data:
+    _id: {}
+    name: {}
+    gid: {}
+    staff_id: {}
+
+# 科目摘要
+cost_accounting_brief:
+  strict_mode: true
+  meta: object_result
+  data:
+    _id: {}
+    name: {}
+    accounting_code: {}
+    parent_info:
+      type: object_ref
+      schema: cost_accounting_brief
+    cost_center_type_title: {}
+    cost_center_type: {}
+    creator_info:
+      type: object_ref
+      schema: account_brief
+
+# 科目详情
+cost_accounting_detail:
+  strict_mode: true
+  meta: object_result
+  extend: oa_cost_accounting
+  data:
+    parent_info:
+      type: object_ref
+      schema: cost_accounting_brief
+    cost_center_type_title: {}
+    creator_info:
+      type: object_ref
+      schema: account_brief
+
+
+# 费用类型摘要
+cost_group_brief:
+  strict_mode: true
+  meta: object_result
+  data:
+    _id: {}
+    name: {}
+    creator_info:
+      type: object_ref
+      schema: account_brief
+    accounting_list:
+      type: object_set_ref
+      schema: cost_accounting_brief
+
+
+# 费用类型详情
+cost_group_detail:
+  strict_mode: true
+  meta: object_result
+  extend: oa_cost_group
+  data:
+    creator_info:
+      type: object_ref
+      schema: account_brief
+    accounting_list:
+      type: object_set_ref
+      schema: cost_accounting_brief
+
+# 费用类型列表
+cost_group_list_item:
+  strict_mode: true
+  meta: object_result
+  data:
+    _id: {}
+    name: {}
+    accounting_ids: {}
+    state: {}
+    created_at: {}
+    creator_info:
+      type: object_ref
+      schema: account_brief
+    accounting_list:
+      type: object_set_ref
+      schema: cost_accounting_tiny
+
+# 审批流摘要
+application_flow_template_brief:
+  strict_mode: true
+  meta: object_result
+  data:
+    _id: {}
+    name: {}
+    cost_catalog_scope_list:
+      type: object_set_ref
+      schema: cost_group_brief
+    extra_ui_options: {}
+    node_list:
+      type: object_set_ref
+      schema: application_flow_node_brief
+
+# 审批流详情
+application_flow_template_detail_node_detail:
+  strict_mode: true
+  meta: object_result
+  extend: oa_application_flow_node
+  data:
+    account_list:
+      type: object_set_ref
+      schema: account_brief
+
+application_flow_template_detail:
+  strict_mode: true
+  meta: object_result
+  extend: oa_application_flow_template
+  data:
+    city_names: {}
+    platform_names: {}
+    supplier_names: {}
+    biz_district_names: {}
+    creator_info:
+      type: object_ref
+      schema: account_brief
+    node_list:
+      type: object_set_ref
+      schema: application_flow_template_detail_node_detail
+    cost_catalog_scope_list:
+      type: object_set_ref
+      schema: cost_group_detail
+    exclude_cost_catalog_scope_list:
+      type: object_set_ref
+      schema: cost_group_brief
+
+cost_accounting_tiny:
+  strict_mode: true
+  meta: object_result
+  data:
+    _id: {}
+    name: {}
+    parent_name: {}
+    accounting_code: {}
+    cost_center_type_title: {}
+    cost_center_type: {}
+
+application_flow_template_list_item_cost_group_tiny:
+  strict_mode: true
+  meta: object_result
+  data:
+    _id: {}
+    name: {}
+    accounting_list:
+      type: object_set_ref
+      schema: cost_accounting_tiny
+
+application_flow_template_list_item:
+  strict_mode: true
+  meta: object_result
+  extend: oa_application_flow_template
+  data:
+    creator_info:
+      type: object_ref
+      schema: account_brief
+    node_list:
+      type: object_set_ref
+      schema: flow_node_info_tiny
+    cost_catalog_scope_list:
+      type: object_set_ref
+      schema: application_flow_template_list_item_cost_group_tiny
+    exclude_cost_catalog_scope_list:
+      type: object_set_ref
+      schema: application_flow_template_list_item_cost_group_tiny
+
+# 审批节点列表
+application_flow_node_embed_item:
+  strict_mode: true
+  meta: object_result
+  extend: oa_application_flow_node
+  data:
+    account_list:
+      type: object_set_ref
+      schema: account_brief
+    parent_flow_template_info:
+      type: object_ref
+      schema: application_flow_template_brief
+
+# 审批节点摘要
+application_flow_node_brief:
+  strict_mode: true
+  meta: object_result
+  data:
+    _id: {}
+    name: {}
+    account_list:
+      type: object_set_ref
+      schema: account_brief
+    is_payment_node: {}
+    can_update_cost_record: {}
+    cost_update_rule: {}
+    index_num: {}
+
+# 审批节点详情
+application_flow_node_detail:
+  strict_mode: true
+  meta: object_result
+  extend: oa_application_flow_node
+  data:
+    account_list:
+      type: object_set_ref
+      schema: account_brief
+    parent_flow_template_info:
+      type: object_ref
+      schema: application_flow_template_brief
+
+# 审核单列表
+application_order_list_item_order_flow_record_tiny:
+  strict_mode: true
+  meta: object_result
+  data:
+    _id: {}
+    order_id: {}
+    state: {}
+    flow_id: {}
+    urge_state: {}
+    note: {}
+    operated_at: {}
+    operate_account_list:
+      type: object_set_ref
+      schema: account_brief
+    index_num: {}
+    reject_to_node_id: {}
+    reject_to_node_info:
+      type: object_ref
+      schema: flow_node_info_tiny
+
+flow_node_info_tiny:
+  strict_mode: true
+  meta: object_result
+  data:
+    _id: {}
+    name: {}
+    account_list:
+      type: object_set_ref
+      schema: account_brief
+    is_payment_node: {}
+    can_update_cost_record: {}
+
+
+application_order_list_item:
+  strict_mode: true
+  meta: object_result
+  data:
+    _id: {}
+    name: {}
+    state: {}
+    biz_state: {}
+    total_money: {}
+    paid_state: {}
+    paid_note: {}
+    submit_at: {}
+    city_names: {}
+    created_at: {}
+    supplier_names: {}
+    platform_names: {}
+    biz_district_names: {}
+    current_operate_accounts: {}
+    flow_info:
+      type: embed_object
+      data:
+        _id: {}
+        name: {}
+    current_flow_node: {}
+    current_flow_node_info:
+      type: object_ref
+      schema: flow_node_info_tiny
+    apply_account_info:
+      type: object_ref
+      schema: account_brief
+    current_pending_account_list:
+      type: object_set_ref
+      schema: account_brief
+    flow_account_list:
+      type: object_set_ref
+      schema: account_brief
+    operate_accounts_list:
+      type: object_set_ref
+      schema: account_brief
+    current_operate_account_list:
+      type: object_set_ref
+      schema: account_brief
+    current_record_list:
+      type: object_set_ref
+      schema: application_order_list_item_order_flow_record_tiny
+    attachment_private_urls: {}
+
+# 审核单摘要
+application_order_brief:
+  strict_mode: true
+  meta: object_result
+  data:
+    _id: {}
+    city_names: {}
+    platform_names: {}
+    supplier_names: {}
+    biz_district_names: {}
+    state: {}
+    biz_state: {}
+    total_money: {}
+    submit_at: {}
+    flow_info:
+      type: object_ref
+      schema: application_flow_template_brief
+    current_flow_node_info:
+      type: object_ref
+      schema: application_flow_node_brief
+    apply_account_info:
+      type: object_ref
+      schema: account_brief
+    current_operate_accounts: {}
+    cost_order_list:
+      type: object_set_ref
+      schema: cost_order_brief
+    flow_record_list:
+      type: object_set_ref
+      schema: application_order_flow_record_brief
+
+
+# 审核单详情
+application_order_detail:
+  strict_mode: true
+  meta: object_result
+  extend: oa_application_order
+  data:
+    city_names: {}
+    supplier_names: {}
+    platform_names: {}
+    biz_district_names: {}
+    flow_info:
+      type: object_ref
+      schema: application_flow_template_brief
+    current_flow_node_info:
+      type: object_ref
+      schema: application_flow_node_brief
+    apply_account_info:
+      type: object_ref
+      schema: account_brief
+    current_pending_account_list:
+      type: object_set_ref
+      schema: account_brief
+    flow_account_list:
+      type: object_set_ref
+      schema: account_brief
+    operate_accounts_list:
+      type: object_set_ref
+      schema: account_brief
+    current_operate_account_list:
+      type: object_set_ref
+      schema: account_brief
+    cost_order_list:
+      type: object_set_ref
+      schema: cost_order_detail
+    current_record_list:
+      type: object_set_ref
+      schema: application_order_flow_record_brief
+    flow_record_list:
+      type: object_set_ref
+      schema: application_order_flow_record_brief
+
+
+# 审批记录摘要
+application_order_flow_record_brief:
+  strict_mode: true
+  meta: object_result
+  data:
+    _id: {}
+    account_info:
+      type: object_ref
+      schema: account_brief
+    extra_info_list:
+      type: object_set_ref
+      schema: oa_application_order_flow_extra
+    operate_account_list:
+      type: object_set_ref
+      schema: account_brief
+    cc_account_list:
+      type: object_set_ref
+      schema: account_brief
+    order_id: {}
+    flow_id: {}
+    index_num: {}
+    reject_to_node_id: {}
+    reject_to_node_info:
+      type: object_ref
+      schema: application_flow_node_brief
+    state: {}
+    urge_state: {}
+    note: {}
+    node_id: {}
+    flow_node_info:
+      type: object_ref
+      schema: application_flow_node_brief
+    operated_at: {}
+    created_at: {}
+
+
+# 审批记录详情
+application_order_flow_record_detail:
+  strict_mode: true
+  meta: object_result
+  extend: oa_application_order_flow_record
+  data:
+    account_info:
+      type: object_ref
+      schema: account_brief
+    extra_info_list:
+      type: object_set_ref
+      schema: oa_application_order_flow_extra
+    operate_account_list:
+      type: object_set_ref
+      schema: account_brief
+    cc_account_list:
+      type: object_set_ref
+      schema: account_brief
+    attachment_private_urls: {}
+
+
+# 分摊明细摘要
+cost_allocation_brief:
+  strict_mode: true
+  meta: object_result
+  data:
+    city_code: {}
+    city_name: {}
+    platform_code: {}
+    platform_name: {}
+    supplier_id: {}
+    supplier_name: {}
+    biz_district_id: {}
+    biz_district_name: {}
+    money: {}
+
+# 成本费用单列表
+cost_order_list_item:
+  strict_mode: true
+  meta: object_result
+  extend: oa_cost_order
+  data:
+    apply_account_info:
+      type: object_ref
+      schema: account_brief
+    cost_group_name: {}
+    city_names: {}
+    supplier_names: {}
+    biz_district_names: {}
+    platform_names: {}
+    cost_accounting_info:
+      type: object_ref
+      schema: cost_accounting_tiny
+
+# 费用单摘要
+cost_order_brief:
+  strict_mode: true
+  meta: object_result
+  data:
+    _id: {}
+    cost_group_name: {}
+    city_names: {}
+    supplier_names: {}
+    platform_names: {}
+    biz_district_names: {}
+    state: {}
+    allocation_mode: {}
+    note: {}
+    attachments: {}
+    usage: {}
+    total_money: {}
+    invoice_flag: {}
+    apply_account_info:
+      type: object_ref
+      schema: account_brief
+    payee_info: {}
+    biz_extra_house_contract_id: {}
+    biz_extra_house_contract_info:
+      type: object_ref
+      schema: oa_house_contract
+    cost_allocation_list:
+      type: object_set_ref
+      schema: cost_allocation_brief
+    cost_group_info:
+      type: object_ref
+      schema: cost_group_brief
+    attachment_private_urls: {}
+
+
+# 费用单详情
+cost_order_detail:
+  strict_mode: true
+  meta: object_result
+  extend: oa_cost_order
+  data:
+    apply_account_info:
+      type: object_ref
+      schema: account_brief
+    city_names: {}
+    supplier_names: {}
+    platform_names: {}
+    biz_district_names: {}
+    attachment_private_urls: {}
+    cost_accounting_info:
+      type: object_ref
+      schema: cost_accounting_brief
+    cost_group_name: {}
+    biz_extra_house_contract_info:
+      type: object_ref
+      schema: house_contract_info
+    cost_allocation_list:
+      type: object_set_ref
+      schema: cost_allocation_brief
+    note: {}
+
+
+cost_order_response:
+  strict_mode: true
+  meta: object_result
+  data:
+    ok: {}
+    record:
+      type: object_ref
+      schema: cost_order_brief
+
+create_cost_order_response:
+  strict_mode: true
+  meta: object_result
+  data:
+    ok: {}
+    records:
+      type: object_set_ref
+      schema: cost_order_brief
+
+application_order_response:
+  strict_mode: true
+  meta: object_result
+  data:
+    ok: {}
+    record:
+      type: object_ref
+      schema: application_order_brief
+
+cost_group_response:
+  strict_mode: true
+  meta: object_result
+  data:
+    ok: {}
+    record:
+      type: object_ref
+      schema: cost_group_brief
+
+cost_accounting_response:
+  strict_mode: true
+  meta: object_result
+  data:
+    ok: {}
+    record:
+      type: object_ref
+      schema: cost_accounting_brief
+
+application_flow_response:
+  strict_mode: true
+  meta: object_result
+  data:
+    ok: {}
+    record:
+      type: object_ref
+      schema: application_flow_template_detail
+
+application_flow_node_response:
+  strict_mode: true
+  meta: object_result
+  data:
+    ok: {}
+    record:
+      type: object_ref
+      schema: application_flow_node_detail
+
+
+house_contract_cost_allotion_item:
+  strict_mode: true
+  meta: object_result
+  data:
+    supplier_id:  {}
+    supplier_name:  {}
+    platform_code:  {}
+    platform_name:  {}
+    city_code:  {}
+    city_name:  {}
+    biz_district_id:  {}
+    biz_district_name:  {}
+# house contract
+house_contract_detail:
+  strict_mode: true
+  meta: object_result
+  extend: oa_house_contract
+  data:
+    creator_info:
+      type: object_ref
+      schema: account_brief
+    supplier_names: {}
+    platform_names: {}
+    city_names: {}
+    state_title: {}
+    biz_state_title: {}
+    allocation_mode_title: {}
+    rent_accounting_info:
+      type: object_ref
+      schema: cost_accounting_tiny
+    pledge_accounting_info:
+      type: object_ref
+      schema: cost_accounting_tiny
+    agent_accounting_info:
+      type: object_ref
+      schema: cost_accounting_tiny
+    lost_accounting_info:
+      type: object_ref
+      schema: cost_accounting_tiny
+    attachment_private_urls: {}
+    cost_allocation_list:
+      type: object_set_ref
+      schema: house_contract_cost_allotion_item
+
+house_contract_list_item:
+  strict_mode: true
+  meta: object_result
+  extend: oa_house_contract
+  data:
+    supplier_names: {}
+    platform_names: {}
+    city_names: {}
+    biz_district_names: {}
+
+house_contract_response:
+  strict_mode: true
+  meta: object_result
+  data:
+    ok: {}
+    record:
+      type: object_ref
+      schema: house_contract_detail
+
+common_message_extra:
+  strict_mode: true
+  meta: object_result
+  extend: common_message
+  data:
+    channel_name: {}
+    state_type_title: {}
+    broad_type_title: {}
+    is_sent: {}
+    is_init: {}
+    is_read: {}
+    is_done: {}
+    is_deleted: {}
+    is_broad_global: {}
+    is_broad_custom: {}
+    account_list:
+      type: object_set_ref
+      schema: account_brief
+
+sys_notice_detail:
+  strict_mode: true
+  meta: object_result
+  extend: common_message_extra
+  data:
+    event_id: {}
+    event_title: {}
+    event_extra: {}
+
+application_urge_record_embed:
+  strict_mode: true
+  meta: object_result
+  data:
+    flow_id: {}
+    flow_name: {}
+    node_id: {}
+    node_name: {}
+    creator_info:
+      type: object_ref
+      schema: account_brief
+    state: {}
+    state_title: {}
+    flow_record_id: {}
+
+boss_assist_notice_detail:
+  strict_mode: true
+  meta: object_result
+  extend: common_message_extra
+  data:
+    event_id: {}
+    event_title: {}
+    event_extra: {}
+    oa_application_order_id: {}
+    oa_application_record_id: {}
+    oa_urge_record_id: {}
+    oa_urge_record_info:
+      type: object_ref
+      schema: application_urge_record_embed
+
+application_urge_record_detail:
+  meta: object_result
+  strict_mode: true
+  extend: oa_application_urge_record
+  data:
+    state_title: {}
+    creator_info:
+      type: object_ref
+      schema: account_brief
+    application_order_info:
+      type: object_ref
+      schema: application_order_list_item
+    flow_record_info:
+      type: object_ref
+      schema: application_order_flow_record_brief
+

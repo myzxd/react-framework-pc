@@ -1,0 +1,350 @@
+- name: salary_plan
+  description: 服务费方案
+  schema:
+  - name: _id
+    required: true
+    type: ObjectId
+    note: _id
+  - name: name
+    required: true
+    type: string
+    note: 规则名称
+  - name: platform_code
+    required: true
+    type: string
+    note: 平台Code
+  - name: supplier_id
+    required: true
+    type: ObjectId
+    note: 供应商ID
+  - name: city_code
+    required: false
+    type: string
+    note: 城市code
+  - name: biz_district_id
+    required: false
+    type: ObjectId
+    note: 商圈ID
+  - name: state
+    required: true
+    type: int
+    note: 状态 -101(删除) -100(停用) 100(启用) 1(草稿)
+  - name: domain
+    required: true
+    type: int
+    note: 适用范围 2（商圈）3（城市）
+  - name: active_version
+    required: false
+    type: ObjectId
+    note: 使用中的版本ID
+  - name: draft_version
+    required: false
+    type: ObjectId
+    note: 当前草稿版本ID
+  - name: application_version
+    required: false
+    type: ObjectId
+    note: 审核中版本ID
+  - name: pending_version
+    required: false
+    type: ObjectId
+    note: 待启用版本ID
+  - name: enabled_at
+    required: false
+    type: datetime
+    default: None
+    note: 启用时间
+  - name: disabled_at
+    required: false
+    type: datetime
+    default: None
+    note: 停用时间
+  - name: deleted_at
+    required: false
+    type: datetime
+    note: 删除时间
+    default: None
+  - name: updated_at
+    required: true
+    type: datetime
+    note: 更新时间
+  - name: created_at
+    required: true
+    type: datetime
+    note: 创建时间
+  - name: creator_id
+    required: true
+    type: ObjectId
+    note: 创建人
+  - name: operator_id
+    required: true
+    type: ObjectId
+    note: 操作人
+
+
+- name: salary_plan_version
+  description: 服务费方案版本
+  schema:
+  - name: _id
+    required: true
+    type: ObjectId
+    note: _id
+  - name: name
+    required: true
+    type: string
+    note: 规则名称
+  - name: revision
+    required: true
+    type: ObjectId
+    note: 修订版本号（规则每次修改均变化）
+  - name: platform_code
+    required: true
+    type: string
+    note: 平台Code
+  - name: supplier_id
+    required: true
+    type: ObjectId
+    note: 供应商ID
+  - name: city_code
+    required: false
+    type: string
+    note: 城市code
+  - name: biz_district_id
+    required: false
+    type: ObjectId
+    note: 商圈ID
+  - name: state
+    required: true
+    type: int
+    note: 状态 1（草稿）10（审批中）50（待生效）100（已生效）-100（已失效）-101（已删除）
+  - name: domain
+    required: true
+    type: int
+    note: 作用域 2（商圈）3（城市）
+  - name: rules
+    required: false
+    type: '[ObjectId]'
+    note: 服务费规则集列表
+
+  - name: salary_var_plan_id
+    required: false
+    type: ObjectId
+    note: 指标库ID
+
+  - name: salary_var_plan_version_id
+    required: false
+    type: ObjectId
+    note: 指标库版本
+
+  - name: config_version_id
+    required: false
+    type: ObjectId
+    note: 指标参数值版本ID
+
+  - name: from_date
+    required: true
+    type: int
+    note: 生效开始日期（yyyymmdd）
+  - name: to_date
+    required: false
+    type: int
+    note: 结束失效日期（yyyymmdd）
+  - name: oa_applied_at
+    required: false
+    type: datetime
+    default: None
+    note: 提审时间
+  - name: oa_done_at
+    required: false
+    default: None
+    type: datetime
+    note: OA审批完成时间
+  - name: active_at
+    required: false
+    type: datetime
+    default: None
+    note: 生效时间
+  - name: closed_at
+    required: false
+    type: datetime
+    default: None
+    note: 失效时间
+  - name: updated_at
+    required: true
+    type: datetime
+    note: 更新时间
+  - name: created_at
+    required: true
+    type: datetime
+    note: 创建时间
+  - name: creator_id
+    required: true
+    type: ObjectId
+    note: 创建人ID
+  - name: operator_id
+    required: true
+    type: ObjectId
+    note: 操作人ID
+  - name: oa_apply_operator_id
+    required: false
+    type: ObjectId
+    note: OA申请人ID
+  - name: oa_application_order_id
+    required: false
+    type: ObjectId
+    note: OA申请单ID
+  - name: oa_operator_id
+    required: true
+    type: ObjectId
+    note: OA最后一次修改人ID
+  - name: dry_run_task_id
+    required: false
+    type: None
+    note: 试算任务ID
+  - name: plan_id
+    required: true
+    type: ObjectId
+    note: 服务费方案ID
+
+- name: salary_plan_rule_collection
+  description: 服务费规则集
+  schema:
+  - name: _id
+    required: true
+    type: ObjectId
+    note: _id
+  - name: plan_id
+    required: true
+    type: ObjectId
+    note: 服务费方案ID
+  - name: plan_version_id
+    required: true
+    type: ObjectId
+    note: 版本id
+  - name: work_type
+    required: true
+    type: int
+    note: '人员类型(3001:全职,3002:兼职)'
+  - name: order_rules
+    required: false
+    type: "[ObjectId]"
+    note: 单量提成规则
+  - name: order_rule_flag
+    required: true
+    type: bool
+    note: 单量提成启用标记
+    default: true
+  - name: order_rule_relation
+    required: true
+    type: int
+    note: 规则关系 1（互斥）2（互补）
+    default: 1
+  - name: work_rules
+    required: false
+    type: "[ObjectId]"
+    note: 出勤扣罚规则
+  - name: work_rule_relation
+    required: true
+    type: int
+    note: 规则关系 1（互斥）2（互补）
+    default: 1
+  - name: work_rule_flag
+    required: true
+    type: bool
+    note: 出勤启用标记
+    default: true
+  - name: qa_rules
+    required: false
+    type: "[ObjectId]"
+    note: 质量扣罚规则
+  - name: qa_rule_relation
+    required: true
+    type: int
+    note: 规则关系 1（互斥）2（互补）
+    default: 1
+  - name: qa_rule_flag
+    required: true
+    type: bool
+    note: 质量启用标记
+    default: true
+  - name: operation_rules
+    required: false
+    type: "[ObjectId]"
+    note: 运营管理奖罚规则
+  - name: operation_rule_relation
+    required: true
+    type: int
+    note: 规则关系 1（互斥）2（互补）
+    default: 2
+  - name: operation_rule_flag
+    required: true
+    type: bool
+    note: 运营管理启用标记
+    default: true
+  - name: created_at
+    default: datetime.utcnow
+    required: true
+    type: datetime
+    note: 创建时间
+  - name: updated_at
+    required: true
+    type: datetime
+    note: 更新时间
+
+- name: salary_rule
+  description: 服务费计算规则
+  schema:
+  - name: _id
+    required: true
+    type: ObjectId
+    note: _id
+  - name: plan_id
+    required: true
+    type: ObjectId
+    note: 服务费方案
+  - name: plan_version_id
+    required: true
+    type: ObjectId
+    note: 服务费方案版本ID
+  - name: rule_collection_id
+    required: true
+    type: ObjectId
+    note: 归属的服务费规则集ID
+  - name: collection_cate
+    required: true
+    type: int
+    note: '规则分类(1:单量,2:出勤,3:质量,4:管理)'
+  - name: collection_cate_option
+    required: true
+    type: dict
+    note: 规则分类参数
+  - name: collection_index_num
+    required: true
+    type: int
+    note: 在规则集中的优先级序号
+    default: 0
+  - name: rule_primary_key
+    required: true
+    type: dict
+    note: 规则唯一主键
+  - name: match_filters
+    required: true
+    type: '[dict]'
+    note: 数据源筛选器(条件)
+  - name: compute_logic
+    required: true
+    type: '[dict]'
+    note: 数据处理逻辑
+  - name: state
+    required: true
+    type: int
+    note: 状态 100（正常） -100（删除）
+  - name: created_at
+    default: datetime.utcnow
+    required: true
+    type: datetime
+    note: 创建时间
+  - name: updated_at
+    required: true
+    type: datetime
+    note: 更新时间

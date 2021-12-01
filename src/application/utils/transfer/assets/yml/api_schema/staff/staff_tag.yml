@@ -1,0 +1,141 @@
+- module: 'staff_tag'
+  apis:
+  - api_ns: 'staff_tag'
+    cmd_list:
+    - summary: 获取人员标签列表
+      description: '获取人员标签列表'
+      cmd: find
+      params:
+        - name: platform_code
+          type: string
+          required: false
+          note: 平台code
+          enum_values: ''
+        - name: supplier_id
+          type: '[object_id]'
+          required: false
+          note: 供应商ID
+          enum_values: ''
+        - name: city_code
+          type: '[string]'
+          required: false
+          note: 城市code
+          enum_values: ''
+        - name: biz_district_id
+          type: '[int]'
+          required: false
+          note: 商圈ID
+          enum_values: ''
+        - name: tag_type
+          type: '[int]'
+          required: false
+          note: 标签类型
+          enum_values: '1（城市级别）2（商圈级别）'
+        - name: state
+          type: int
+          required: false
+          note: 状态
+          enum_values: '100（启用）-100（停用）'
+      result:
+        type: 'api_result_set_with_meta'
+        schema: 'staff_tag_list_item'
+      param_example:
+        platform_code: '12321'
+        supplier_id: '580cb92e3d65ce09ebf7dc4e'
+        city_code: '12321'
+        biz_district_id: '580cb92e3d65ce09ebf7dc4e'
+        tag_type: 1
+        state: 100
+      result_example:
+        platform_code: '12321'
+        supplier_id: '580cb92e3d65ce09ebf7dc4e'
+        city_code: '12321'
+        biz_district_id: '580cb92e3d65ce09ebf7dc4e'
+        tag_type: 1
+
+    - summary: 人员信息查询
+      description: '人员信息查询'
+      cmd: find
+      params:
+        - name: name
+          type: string
+          required: false
+          note: 骑士名称
+          enum_values: ''
+        - name: phone
+          type: string
+          required: false
+          note: 手机号
+          enum_values: ''
+        - name: work_type
+          type: int
+          required: false
+          note: 工作性质
+          enum_values: '3001全职，3002兼职'
+        - name: staff_tag_id
+          type: object_id
+          required: true
+          note: 人员标签ID
+          enum_values: ''      
+      result:
+        type: 'api_result_set_with_meta'
+        schema: 'staff_tag_map_list_item'
+      param_example:
+        name: '5a655eaace6d2a430f748f82'
+        phone: '13011331783'
+        work_type: 3001
+        staff_tag_id: '580cb92e3d65ce09ebf7dc4e'
+      result_example:
+          _id: '580cb92e3d65ce09ebf7dc4e'
+          name: '黄秀爱'
+          age: '25'
+          platfrom_code: '23453'
+          biz_district_id: '580cb92e3d65ce09ebf7dc4e'
+          city_code: '3001112'
+          phone: '13011331783'
+          card_id: '130124299417278219'
+          tag_name: '怒大俗'
+
+    - summary: 批量移除人员标签
+      description: '批量移除人员标签'
+      cmd: remove
+      params:
+        - name: tag_id
+          type: object_id
+          required: true
+          note: 标签ID
+          enum_values: ''
+        - name: staff_ids
+          type: '[object_id]'
+          required: true
+          note: 人员id
+          enum_values: ''      
+      result: {}
+      param_example:
+        tag_id: '5a655eaace6d2a430f748f82'
+        staff_ids: ['5a655eaace6d2a430f748f82','5a655eaace6d2a430f748f82']
+      result_example:
+        ok: true
+        tag_id: '5a655eaace6d2a430f748f82'
+
+    - summary: 批量添加人员标签
+      description: '批量添加人员标签'
+      cmd: add
+      params:
+        - name: tag_id
+          type: object_id
+          required: true
+          note: 标签ID
+          enum_values: ''
+        - name: staff_ids
+          type: '[object_id]'
+          required: true
+          note: 人员id
+          enum_values: ''       
+      result: {}
+      param_example:
+        tag_id: '5a655eaace6d2a430f748f82'
+        staff_ids: ['5a655eaace6d2a430f748f82','5a655eaace6d2a430f748f82']
+      result_example:
+          ok: true
+          tag_id: '5a655eaace6d2a430f748f82'

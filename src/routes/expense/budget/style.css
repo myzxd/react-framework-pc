@@ -1,0 +1,11 @@
+/* 费用预算操作模板更新时间样式 */
+.app-comp-expense-budget-operation-date {
+  display: inline-block;
+  margin-right: 10px;
+}
+
+/* 费用预算操作下载模板样式 */
+.app-comp-expense-budget-operation-download {
+  display: inline-block;
+  margin-right: 10px;
+}

@@ -1,0 +1,85 @@
+- name: payroll_plan
+  description: 结算计划
+  schema:
+  - name: _id
+    type: ObjectId
+    note: id
+    required: true
+  - name: platform_code
+    type: string
+    note: 平台code
+    required: true
+  - name: supplier_id
+    type: ObjectId
+    note: 供应商id
+    required: true
+  - name: city_code
+    type: string
+    note: 城市code
+    required: true
+  - name: biz_district_id
+    type: ObjectId
+    note: 商圈id
+    required: false
+  - name: type
+    type: int
+    note: '类型(1:城市级别，2:商圈级别)'
+    required: true
+
+  - name: payroll_cycle_type
+    type: int
+    note: 结算周期类型 1（按月）2（按日）
+    required: true
+  - name: cycle_interval
+    type: int
+    note: 结算周期值（天/月）
+    required: true
+
+  - name: payroll_cycle_no
+    type: int
+    note: 当前周期编号
+    required: true
+    default: 1
+
+  - name: init_execute_date
+    type: int
+    note: 首次计算执行日(yyyymmdd)
+    required: false
+  - name: next_execute_date
+    type: int
+    note: 计算执行日(下次结算单生成日期)
+    required: false
+  - name: compute_delay_days
+    type: int
+    note: 计算预留后延天数
+    required: true
+  - name: adjustment_flag
+    type: bool
+    note: '扣补款标示(true:有款项，false:无款项)'
+    required: true
+    default: true
+  - name: work_type
+    type: int
+    note: '工作性质(3001:全职,3002:兼职)'
+    required: true
+  - name: operator_id
+    type: ObjectId
+    note: 操作人id
+    required: true
+  - name: creator_id
+    type: ObjectId
+    note: 创建人id
+    required: true
+  - name: state
+    type: int
+    note: 状态 100（启用）-100（禁用） -101（删除）
+    required: true
+  - name: created_at
+    type: datetime
+    note: 创建时间
+    required: true
+  - name: updated_at
+    type: datetime
+    note: 更新时间
+    required: true
+

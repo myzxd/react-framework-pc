@@ -1,0 +1,34 @@
+/* 人员管理表单创建银行卡信息识别 */
+.app-comp-employee-manage-form-create-bankInfo-identify {
+  margin-left: 19% !important;
+}
+
+/* 人员管理表单创建个人信息名族 */
+.app-comp-employee-manage-form-create-baseInfo-national {
+  width: 100% !important;
+}
+
+/* 人员管理表单创建个人信息学历 */
+.app-comp-employee-manage-form-create-baseinfo-education{
+  width: 100% !important;
+}
+
+/* 人员管理表单创建业务范围信息商圈 */
+.app-comp-employee-manage-form-create-business-districts {
+  width: 100% !important;
+}
+
+/* 人员管理表单创建合同信息签约类型 */
+.app-comp-employee-manage-form-create-contract-sign-type {
+  width: 100% !important;
+}
+
+/* 人员管理表单创建合同信息甲方合同 */
+.app-comp-employee-manage-form-create-contract-belong {
+  width: 100% !important;
+}
+
+/* 人员管理表单创建合同信息签约 */
+.app-comp-employee-manage-form-create-contract-sign {
+  width: 100% !important;
+}
