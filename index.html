@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Document</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" >
+        <meta name="format-detection" content="telphone=no, email=no,address=no" >
+        <meta content="yes" name="apple-mobile-web-app-capable">
+        <style type="text/css">
+            *{
+                padding:0;
+                margin:0;
+                list-style:none;
+            }
+            html,
+            body,
+            .wrap{
+                width:100%;
+                height:100%;
+            }
+            header{
+                width: 100%;
+                height:100px;
+                display:flex;
+                justify-content:center;
+                align-items:center;
+            }
+            header h1{
+                color:#28BA73;
+                font-size:18px;
+            }
+            section{
+                width:100%;
+                height:auto;
+                display:flex;
+                justify-content:center;
+                align-items:center;
+                flex-direction:column;
+            }
+            section p{
+                width:90%;
+                height:40px;
+                border-bottom:1px solid #ccc;
+                margin-top:20px;
+            }
+            section p>input{
+                width:95%;
+                height:38px;
+                background:0;
+                border:0;
+            }
+           section button{
+             width:90%;
+                height:40px;
+                border:0;
+                background:#28BA73;
+                border-radius:5px;
+                margin-top:20px;
+                color:#fff;
+                font-size:18px;
+            }
+        </style>
+</head>
+<body>
+   <div class="wrap">
+       <header>
+           <h1>设备测试预约系统</h1>
+       </header>
+       <section>
+           <p><input type="text" name="" placeholder="将输入手机号码"></p>
+            <p><input type="password" name="" placeholder="将输入密码"></p>
+            <button>登录账号，开始预约</button>
+       </section>
+   </div>
+   <script>
+       var btn = document.querySelector("button");
+       btn.onclick=function(){
+         location.href="www.baidu.com"
+       }
+   </script>
+</body>
+</html>
