@@ -1,6 +1,8 @@
 const path = require('path');
 const HTMLWebpackPlugin = require('html-webpack-plugin');
-const { merge } = require('webpack-merge');
+const {
+    merge
+} = require('webpack-merge');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const TerserWebpackPlugin = require("terser-webpack-plugin");
 const ProdConfig = require('./bin/webpack.prod.config')
@@ -12,7 +14,7 @@ const NODE_ENV = process.env.NODE_ENV;
 const isProd = NODE_ENV === "production";
 
 module.exports = merge({
-    entry: path.resolve(__dirname, './src/index.js'),
+    entry: path.resolve(__dirname, './src/index.tsx'),
     output: {
         path: path.resolve(__dirname, 'dist'),
         filename: 'js/[name].[contenthash:8].js',
@@ -53,7 +55,11 @@ module.exports = merge({
         ]
     },
     module: {
-        rules: [
+        rules: [{
+                test: /\.tsx?$/,
+                loader: "ts-loader",
+                exclude: /node_modules/,
+            },
             {
                 test: /\.(js|jsx?)$/,
                 use: ['babel-loader?cacheDirectory'],

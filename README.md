@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # aoao-boss-app
 嗷嗷Boss前端
 
@@ -31,6 +30,3 @@
 - 服务器地址：qhfront@123.124.17.55:/data/project/web/qa/aoao-boss-app
 - 环境：http://boss-quhuo.aoaosong.com/#/
 =======
-# mode
-dome
->>>>>>> ba1a7cd584561a911c50e7bb85d5d133b819501a

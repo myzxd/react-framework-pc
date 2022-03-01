@@ -131,7 +131,7 @@ function Header(props) {
 
   // 渲染趣活logo或者嗷嗷BOSS logo
   const renderLogo = () => {
-    if (window.application.config.isShowQuhuoLogo) {
+    if (window?.application?.config?.isShowQuhuoLogo) {
       return (
         <div
           className={styles['app-header-title-quhuo']}
@@ -140,7 +140,7 @@ function Header(props) {
           <span onClick={onOpenDebugMode}>B</span>OS<span onClick={onCloseDebugMode}>S</span>之家
         </div>
       );
-    } else if (window.application.config.isShowHuiLiuLogo) {
+    } else if (window?.application?.config?.isShowHuiLiuLogo) {
       return (
         <React.Fragment />
       );

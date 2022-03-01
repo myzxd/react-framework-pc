@@ -24,7 +24,6 @@ import Plan from './document/plan.md';
 
 // 目录结构文档
 import Admin from '../README.md';
-import Employee from '../../employee/README.md';
 import Account from '../../account/README.md';
 import System from '../../system/README.md';
 import styles from './style.less';
@@ -84,7 +83,6 @@ class Interface extends Component {
           title: '模块说明',
           data: [
             { title: '超级管理', type: ContentType.Markdown, file: Admin },
-            { title: '人员管理', type: ContentType.Markdown, file: Employee },
             { title: '我的账户', type: ContentType.Markdown, file: Account },
             { title: '系统管理', type: ContentType.Markdown, file: System },
           ],
